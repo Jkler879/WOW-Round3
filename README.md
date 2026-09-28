@@ -27,7 +27,7 @@ Round3目标：5项RAGAS原生指标对标生产上线标准 + 系统能力天�
     **引用：**
   *Correctness is not Faithfulness in RAG Attributions* —https://arxiv.org/abs/2412.18004
      
-  - 2、Chain-of-Illocution（CoI）在解释生成任务上验证，Evidence-First 结构平均带来 +34% source faithfulness 提升（与 RAGAS
+  - 2、Chain-of-Illocution（CoI）在解释生成任务上验证，Evidence-First 结构平均带来 +34% source faithfulness 提升（与 RAGAS原生
   Faithfulness 为同类指标，非直接对应数值）。
   
     **引用：**
