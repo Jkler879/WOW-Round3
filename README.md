@@ -19,7 +19,7 @@ Round3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力�
 
 #### 1. Reasoning 类型问题幻觉（优化前：FaithFulness 0.64）
 
-  **规模：** 16 条 badcase，占 badcase 总量的 43%。
+  **规模：** 16 条 badcase，占 badcase 总量 43%。
   
   **根因：** 模型已检索到正确文档（CR = 1.0），但 ReAct 推理链在生成答案前混入了参数记忆，Rule 7
   仅约束输出层，无法拦截推理过程中的参数记忆渗入（post-rationalization）。
