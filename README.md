@@ -1,15 +1,15 @@
 # WOW-离线数据飞轮（三轮）
 针对ReAct Agent多轮对话系统的离线数据飞轮模块（共三轮）
 
-1、Round1 诊断轮（获取系统基于ragas原生框架指标基准baseline - 提前冻结的200条评估集 - judgemodel：qwen-plus与生产系统分离）
+1、Round 1 诊断轮（获取系统基于ragas原生框架指标基准baseline - 提前冻结的200条评估集 - judgemodel：qwen-plus与生产系统分离）
 
-2、Round2 验证轮（观测Round1后做的系统优化、知识库优化等带来的指标优化 - 提前冻结的200条评估集-统一judgemodel：qwen-plus）
+2、Round 2 验证轮（观测Round1后做的系统优化、知识库优化等带来的指标优化 - 提前冻结的200条评估集-统一judgemodel：qwen-plus）
 
-3、Round3 压力轮（对标生产上线指标 + 系统能力天花板测试）
+3、Round 3 压力轮（对标生产上线指标 + 系统能力天花板测试）
 
-Round1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告中。
+Round 1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告中。
 
-Round3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力天花板测试
+Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力天花板测试
 
 ### 完整飞轮报告：
   [Round 2 RAGAS Diagnostic
