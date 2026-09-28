@@ -15,7 +15,7 @@ Round2 验证轮完整 report 链接：
 
 Round3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力天花板测试
 
-### Round 2 优化内容：
+### Round 2 诊断及系统优化：
 
 #### 1. Reasoning 类型问题幻觉（优化前：FaithFulness 0.64）
 
