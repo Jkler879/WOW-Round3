@@ -12,10 +12,11 @@ Round1, 2已结束，具体优化步骤、指标提升在每轮完整报告中�
 Round3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力天花板测试
 
 ### 完整飞轮报告：
-   #### Round1 诊断轮完整 report 链接：https://<Jkler879>.github.io/<WOW-Round3>/round2_diagnostic_report.html
-
-   #### Round2 验证轮完整 report 链接：
-
+  [Round 2 RAGAS Diagnostic
+  Report](https://htmlpreview.github.io/?https://github.com/<Jkler879>/<WOW-Round3>/blob/main/round2_diagnostic_report.html)
+  
+  [Round 1 RAGAS Baseline
+  Report](https://htmlpreview.github.io/?https://github.com/<Jkler879>/<WOW-Round3>/blob/main/round1_baseline_report.html)
 
 ### Round 2 诊断及系统优化：
 
