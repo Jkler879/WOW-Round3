@@ -19,7 +19,7 @@ Round3目标：5项RAGAS原生指标对标生产上线标准 + 系统能力天�
   
   **优化方案：** 在 `agent.py` 的 system prompt 中强制插入 Evidence Extraction 前置步骤。模型必须先从检索结果中逐条列出原文证据，再在证据范围内推理，同时声明文档未覆盖的部分。此改动仅涉及 system prompt，LangGraph 图结构不变，实际生效时机为 **初次检索返回结果后**的agent_node 调用。
 
-  **论文支撑：**
+  **相关论文观点支撑：**
   - 1、Evidence-First 是切断 post-rationalization 的核心手段。RAG 系统中高达 57%
   的引用为后验合理化——模型先形成答案再反向贴引用，Citatio是事后标签而非推理起点。Evidence Extraction
   通过强制"先提取、再推理"颠倒这一顺序。
