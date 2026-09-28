@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 2 RAGAS Diagnostic Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg:          #0A0E1A;
+    --surface:     #111827;
+    --surface-2:   #1C2333;
+    --surface-3:   #242F44;
+    --border:      #2D3A52;
+    --text:        #F0F4FF;
+    --text-muted:  #8896AD;
+    --text-faint:  #4A5568;
+    --accent:      #6366F1;
+    --accent-dim:  rgba(99,102,241,0.15);
+    --good:        #10B981;
+    --good-dim:    rgba(16,185,129,0.15);
+    --warn:        #F59E0B;
+    --warn-dim:    rgba(245,158,11,0.15);
+    --bad:         #EF4444;
+    --bad-dim:     rgba(239,68,68,0.15);
+    --neutral:     #64748B;
+    --neutral-dim: rgba(100,116,139,0.15);
+    --mono: "IBM Plex Mono", "Courier New", monospace;
+    --sans: "Inter", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg:          #F1F5FF;
+      --surface:     #FFFFFF;
+      --surface-2:   #F8FAFF;
+      --surface-3:   #EEF2FF;
+      --border:      #D1D9EF;
+      --text:        #0F172A;
+      --text-muted:  #475569;
+      --text-faint:  #94A3B8;
+      --accent-dim:  rgba(99,102,241,0.10);
+      --good-dim:    rgba(16,185,129,0.10);
+      --warn-dim:    rgba(245,158,11,0.10);
+      --bad-dim:     rgba(239,68,68,0.10);
+      --neutral-dim: rgba(100,116,139,0.10);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F1F5FF; --surface: #FFFFFF; --surface-2: #F8FAFF; --surface-3: #EEF2FF;
+    --border: #D1D9EF; --text: #0F172A; --text-muted: #475569; --text-faint: #94A3B8;
+    --accent-dim: rgba(99,102,241,0.10); --good-dim: rgba(16,185,129,0.10);
+    --warn-dim: rgba(245,158,11,0.10); --bad-dim: rgba(239,68,68,0.10);
+    --neutral-dim: rgba(100,116,139,0.10); color-scheme: light;
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { margin: 0; font-family: var(--sans); text-wrap: balance; }
+  p { margin: 0; }
+  table { border-collapse: collapse; width: 100%; }
+  code, .mono { font-family: var(--mono); }
+
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+  .page-header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .header-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .header-title { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 8px; }
+  .header-meta { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; }
+  .meta-chip { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* ── Metric tiles ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 800px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 500px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+  .metric-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 14px; position: relative; overflow: hidden; }
+  .metric-tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 2px; border-radius: 10px 10px 0 0; }
+  .metric-tile.good::before { background: var(--good); }
+  .metric-tile.warn::before { background: var(--warn); }
+  .metric-tile.bad::before  { background: var(--bad); }
+  .metric-tile.neutral::before { background: var(--neutral); }
+  .tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .tile-value { font-family: var(--mono); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 6px; }
+  .tile-value.good { color: var(--good); } .tile-value.warn { color: var(--warn); } .tile-value.bad { color: var(--bad); } .tile-value.neutral { color: var(--neutral); }
+  .tile-delta { font-family: var(--mono); font-size: 11px; margin-bottom: 6px; }
+  .delta-up { color: var(--good); } .delta-down { color: var(--bad); } .delta-flat { color: var(--text-faint); }
+  .tile-bar-track { height: 3px; background: var(--surface-3); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+  .tile-bar-fill { height: 100%; border-radius: 2px; }
+  .tile-bar-fill.good { background: var(--good); } .tile-bar-fill.warn { background: var(--warn); } .tile-bar-fill.bad { background: var(--bad); }
+  .tile-note { font-size: 11px; color: var(--text-faint); line-height: 1.4; }
+
+  /* ── Cards ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 750px) { .three-col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .three-col { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 20px 16px; }
+  .card-full { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 20px 16px; margin-bottom: 20px; }
+  .card-title { font-size: 12px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+  /* ── Tables ── */
+  .data-table-wrap { overflow-x: auto; }
+  .data-table { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .data-table th { text-align: left; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); padding: 0 10px 8px 0; font-weight: 500; white-space: nowrap; }
+  .data-table td { padding: 7px 10px 7px 0; border-top: 1px solid var(--border); vertical-align: middle; }
+  .cell-label { font-family: var(--sans); font-size: 12px; color: var(--text); font-weight: 500; }
+  .cell-sub { font-family: var(--sans); font-size: 11px; color: var(--text-muted); }
+  .score { display: inline-flex; align-items: center; gap: 6px; }
+  .score-num.good { color: var(--good); } .score-num.warn { color: var(--warn); } .score-num.bad { color: var(--bad); } .score-num.neutral { color: var(--neutral); }
+  .score-pip { width: 32px; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .score-pip-fill { height: 100%; border-radius: 2px; }
+  .score-pip-fill.good { background: var(--good); } .score-pip-fill.warn { background: var(--warn); } .score-pip-fill.bad { background: var(--bad); }
+
+  /* ── Badcase stats ── */
+  .badcase-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .badcase-stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 12px; }
+  .stat-tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-tile-value { font-family: var(--mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 4px; }
+  .stat-tile-sub { font-size: 11px; color: var(--text-faint); }
+
+  /* ── Diagnostic cards ── */
+  .diag-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+  .diag-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .diag-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-family: var(--mono); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .diag-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .diag-count { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin-left: auto; }
+  .diag-body { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
+  .diag-fix { background: var(--good-dim); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: var(--good); font-family: var(--mono); }
+  .diag-fix-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; margin-bottom: 3px; }
+
+  /* ── Callouts ── */
+  .insight { background: var(--accent-dim); border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .insight strong { color: var(--accent); font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .warn-callout { background: var(--warn-dim); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .warn-callout strong { color: var(--warn); }
+  .good-callout { background: var(--good-dim); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .good-callout strong { color: var(--good); }
+
+  /* ── Section headings ── */
+  .section-heading { font-size: 15px; font-weight: 700; color: var(--text); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px; }
+  .section-heading::before { content: ''; display: inline-block; width: 3px; height: 16px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Comparison row ── */
+  .compare-row { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .compare-row:first-child { border-top: none; }
+  .compare-label { width: 160px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+  .compare-r1 { color: var(--text-faint); width: 54px; text-align: right; }
+  .compare-arrow { color: var(--text-faint); font-size: 10px; }
+  .compare-r2 { width: 54px; text-align: right; font-weight: 600; }
+  .compare-bar-wrap { flex: 1; position: relative; height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+  .compare-bar-r1 { position: absolute; left: 0; top: 0; height: 100%; background: var(--text-faint); border-radius: 3px; opacity: 0.5; }
+  .compare-bar-r2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; }
+  .compare-delta { font-size: 10px; width: 52px; text-align: right; flex-shrink: 0; }
+
+  /* ── Action items ── */
+  .action-row { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--border); }
+  .action-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-family: var(--mono); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .action-body { flex: 1; font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .action-title { font-weight: 600; color: var(--text); font-family: var(--sans); margin-bottom: 2px; }
+  .action-file { font-family: var(--mono); font-size: 10px; color: var(--text-faint); }
+
+  /* ── Target bar ── */
+  .target-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .target-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+  .target-metric { margin-bottom: 14px; }
+  .target-metric-header { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; margin-bottom: 6px; }
+  .target-metric-name { color: var(--text-muted); }
+  .target-values { display: flex; gap: 12px; align-items: center; }
+  .target-r1 { color: var(--text-faint); }
+  .target-r2 { color: var(--warn); font-weight: 600; }
+  .target-r3 { color: var(--good); font-weight: 600; }
+  .target-bar-track { flex: 1; height: 8px; background: var(--surface-3); border-radius: 4px; position: relative; overflow: hidden; }
+  .target-bar-r1  { position: absolute; left: 0; top: 0; height: 100%; background: var(--text-faint); border-radius: 4px; opacity: 0.4; }
+  .target-bar-r2  { position: absolute; left: 0; top: 0; height: 100%; background: var(--warn); border-radius: 4px; opacity: 0.7; }
+  .target-bar-r3  { position: absolute; left: 0; top: 0; height: 100%; background: var(--good); border-radius: 4px; opacity: 0.3; }
+  .target-marker  { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--good); border-radius: 1px; }
+
+  .footnotes { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-faint); line-height: 1.7; font-family: var(--mono); }
+  .footnotes span { display: block; }
+
+  .pattern-tag { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .tag-bad     { background: var(--bad-dim);     color: var(--bad); }
+  .tag-warn    { background: var(--warn-dim);     color: var(--warn); }
+  .tag-neutral { background: var(--neutral-dim);  color: var(--neutral); }
+  .tag-accent  { background: var(--accent-dim);   color: var(--accent); }
+  .tag-good    { background: var(--good-dim);      color: var(--good); }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- ── Header ── -->
+  <header class="page-header">
+    <div class="header-eyebrow">Data Flywheel · Evaluation</div>
+    <h1 class="header-title">Round 2 RAGAS Diagnostic Report</h1>
+    <div class="header-meta">
+      <span class="meta-chip"><span class="dot"></span>评估日期：2026-09-28</span>
+      <span class="meta-chip"><span class="dot"></span>Judge LLM：qwen-plus</span>
+      <span class="meta-chip"><span class="dot"></span>框架：ragas 0.4.3</span>
+      <span class="meta-chip"><span class="dot"></span>样本：183 条</span>
+      <span class="meta-chip"><span class="dot"></span>知识库：WoW 100 主题，100 条 chunks</span>
+    </div>
+  </header>
+
+  <!-- ── Metric tiles ── -->
+  <div class="metrics-grid">
+    <div class="metric-tile warn">
+      <div class="tile-label">Faithfulness</div>
+      <div class="tile-value warn">0.610</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.120</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.490</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:61%"></div></div>
+      <div class="tile-note">答案声明被文档支撑的比例。幻觉主诊断指标。</div>
+    </div>
+    <div class="metric-tile warn">
+      <div class="tile-label">Answer Relevancy</div>
+      <div class="tile-value warn">0.643</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.010</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.633</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:64.3%"></div></div>
+      <div class="tile-note">答案与问题的相关程度（嵌入相似度）。</div>
+    </div>
+    <div class="metric-tile good">
+      <div class="tile-label">Context Precision</div>
+      <div class="tile-value good">0.950</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.003</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.947</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:95%"></div></div>
+      <div class="tile-note">检索文档的有用性比例。受循环偏差影响，高分参考价值有限。</div>
+    </div>
+    <div class="metric-tile good">
+      <div class="tile-label">Context Recall</div>
+      <div class="tile-value good">0.935</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.033</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.903</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:93.5%"></div></div>
+      <div class="tile-note">GT 声明被检索文档覆盖的比例。同受循环偏差影响。</div>
+    </div>
+    <div class="metric-tile warn">
+      <div class="tile-label">Answer Correctness</div>
+      <div class="tile-value warn">0.594</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.004</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.590</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:59.4%"></div></div>
+      <div class="tile-note">答案与 GT 的声明 F1 + 语义相似度综合分。</div>
+    </div>
+  </div>
+
+  <div class="warn-callout">
+    <strong>循环偏差（Circular Bias）</strong> — 评估集的 Question 与 Ground Truth 均由知识库 chunk 生成，导致 Context Precision（0.950）和 Context Recall（0.935）结构性虚高。这两个高分反映评估集设计的内生一致性，而非检索系统的真实精度。轮次间相对比较仍然有效（R1 vs R2 使用相同评估集）。<strong>Faithfulness 和 Answer Correctness 受循环偏差影响最小，是本轮最具诊断价值的指标。</strong>
+  </div>
+
+  <!-- ── R1 vs R2 Comparison ── -->
+  <h2 class="section-heading">R1 → R2 全指标对比</h2>
+  <div class="card-full">
+    <div class="compare-row">
+      <span class="compare-label">Faithfulness</span>
+      <span class="compare-r1">0.490</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--warn)">0.610</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:49%"></div>
+        <div class="compare-bar-r2" style="width:61%; background:var(--warn)"></div>
+      </div>
+      <span class="compare-delta delta-up">+12.0%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Answer Relevancy</span>
+      <span class="compare-r1">0.633</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--warn)">0.643</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:63.3%"></div>
+        <div class="compare-bar-r2" style="width:64.3%; background:var(--warn)"></div>
+      </div>
+      <span class="compare-delta delta-up">+1.0%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Context Precision</span>
+      <span class="compare-r1">0.947</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.950</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:94.7%"></div>
+        <div class="compare-bar-r2" style="width:95%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-up">+0.3%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Context Recall</span>
+      <span class="compare-r1">0.903</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.935</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:90.3%"></div>
+        <div class="compare-bar-r2" style="width:93.5%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-up">+3.2%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Answer Correctness</span>
+      <span class="compare-r1">0.590</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--warn)">0.594</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:59%"></div>
+        <div class="compare-bar-r2" style="width:59.4%; background:var(--warn)"></div>
+      </div>
+      <span class="compare-delta delta-up">+0.4%</span>
+    </div>
+  </div>
+
+  <div class="good-callout">
+    <strong>主要进展</strong> — R2 最大改善来自 Faithfulness（+12.0%），说明 Langfuse 可观测性接入 + vLLM 推理链路稳定后，推理幻觉有显著改善。Answer Correctness 提升幅度较小（+0.4%），说明答案方向准确性仍是 Round 3 的核心攻坚目标。
+  </div>
+
+  <!-- ── Question type breakdown ── -->
+  <h2 class="section-heading">按问题类型分解（R2）</h2>
+  <div class="three-col">
+    <div class="card">
+      <div class="card-title">Simple — n=92</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>均值</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td>
+                <td><span class="score"><span class="score-num warn">0.689</span><span class="score-pip"><span class="score-pip-fill warn" style="width:68.9%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td>
+                <td><span class="score"><span class="score-num good">0.694</span><span class="score-pip"><span class="score-pip-fill good" style="width:69.4%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td>
+                <td><span class="score"><span class="score-num good">0.984</span><span class="score-pip"><span class="score-pip-fill good" style="width:98.4%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td>
+                <td><span class="score"><span class="score-num good">0.973</span><span class="score-pip"><span class="score-pip-fill good" style="width:97.3%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td>
+                <td><span class="score"><span class="score-num warn">0.640</span><span class="score-pip"><span class="score-pip-fill warn" style="width:64%"></span></span></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Reasoning — n=77</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>均值</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td>
+                <td><span class="score"><span class="score-num bad">0.495</span><span class="score-pip"><span class="score-pip-fill bad" style="width:49.5%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td>
+                <td><span class="score"><span class="score-num warn">0.615</span><span class="score-pip"><span class="score-pip-fill warn" style="width:61.5%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td>
+                <td><span class="score"><span class="score-num good">0.934</span><span class="score-pip"><span class="score-pip-fill good" style="width:93.4%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td>
+                <td><span class="score"><span class="score-num good">0.885</span><span class="score-pip"><span class="score-pip-fill good" style="width:88.5%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td>
+                <td><span class="score"><span class="score-num bad">0.522</span><span class="score-pip"><span class="score-pip-fill bad" style="width:52.2%"></span></span></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--bad)">⚠ F 和 AC 均为三类最低，首要优化目标</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Multi-hop — n=14</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>均值</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td>
+                <td><span class="score"><span class="score-num good">0.695</span><span class="score-pip"><span class="score-pip-fill good" style="width:69.5%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td>
+                <td><span class="score"><span class="score-num bad">0.459</span><span class="score-pip"><span class="score-pip-fill bad" style="width:45.9%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td>
+                <td><span class="score"><span class="score-num warn">0.810</span><span class="score-pip"><span class="score-pip-fill warn" style="width:81%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td>
+                <td><span class="score"><span class="score-num good">0.964</span><span class="score-pip"><span class="score-pip-fill good" style="width:96.4%"></span></span></span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td>
+                <td><span class="score"><span class="score-num warn">0.669</span><span class="score-pip"><span class="score-pip-fill warn" style="width:66.9%"></span></span></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--warn)">⚠ AR=0.459 显著偏低，多跳答案偏离问题核心</div>
+    </div>
+  </div>
+
+  <!-- ── Badcase stats ── -->
+  <h2 class="section-heading">Badcase 统计</h2>
+  <div class="badcase-stats">
+    <div class="stat-tile">
+      <div class="stat-tile-label">R1 Badcase</div>
+      <div class="stat-tile-value" style="color:var(--bad)">62</div>
+      <div class="stat-tile-sub">F&lt;0.3 或 AC&lt;0.4</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">R2 Badcase</div>
+      <div class="stat-tile-value" style="color:var(--warn)">37</div>
+      <div class="stat-tile-sub">较 R1 减少 40.3%</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">R2 修复</div>
+      <div class="stat-tile-value" style="color:var(--good)">34</div>
+      <div class="stat-tile-sub">R1 bad → R2 good</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">R2 回归</div>
+      <div class="stat-tile-value" style="color:var(--bad)">9</div>
+      <div class="stat-tile-sub">R1 good → R2 bad（新增）</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <strong>诊断</strong> Badcase 从 62 → 37，净减少 40.3%，主要得益于检索链路稳定化。但 9 条回归 badcase（R1 good → R2 bad）指向 BGE Reranker ONNX 迁移后分数漂移的副作用，是 Round 3 专项优化目标之一。
+  </div>
+
+  <!-- ── Diagnostic categories ── -->
+  <h2 class="section-heading">R2 诊断分类（37 条 Badcase）</h2>
+
+  <div class="diag-card">
+    <div class="diag-header">
+      <div class="diag-num">1</div>
+      <div class="diag-title">Reasoning 幻觉</div>
+      <div class="diag-count">16 条 · F&lt;0.3 + question_type=reasoning</div>
+    </div>
+    <div class="diag-body">
+      推理类问题要求多步因果推断，模型倾向于用参数记忆补全推断链而非严格引用检索文档，形成 post-rationalization（推断结论后反向补充引用）。57% 的 RAG 引用发生在答案已确定之后（arxiv 2606.28358）。
+      <div style="margin-top:8px"><span class="pattern-tag tag-bad">F&lt;0.3</span> <span class="pattern-tag tag-neutral">reasoning 专属</span></div>
+    </div>
+    <div class="diag-fix">
+      <div class="diag-fix-label">已实施优化（Round 3）</div>
+      Rule 8 证据提取优先（Evidence-First / CoI）+ Rule 9 答案输出前自检 + 运行时问题分类器（query_rewriter.py）
+    </div>
+  </div>
+
+  <div class="diag-card">
+    <div class="diag-header">
+      <div class="diag-num">2</div>
+      <div class="diag-title">Simple / Multi-hop 幻觉</div>
+      <div class="diag-count">8 条 · F&lt;0.3 + question_type≠reasoning</div>
+    </div>
+    <div class="diag-body">
+      Simple 类：检索文档有明确事实，但模型用训练记忆覆盖，静默替换文档原文。Multi-hop 类：5 步 ReAct 上限过紧，多跳子问题分解无法完成，中途截断导致推理空白被参数记忆填补。
+      <div style="margin-top:8px"><span class="pattern-tag tag-bad">F&lt;0.3</span> <span class="pattern-tag tag-neutral">simple / multi_hop</span></div>
+    </div>
+    <div class="diag-fix">
+      <div class="diag-fix-label">已实施优化（Round 3）</div>
+      QUESTION_TYPE_RULES 注入（agent.py）+ 动态 max_steps（simple=3 / reasoning=5 / multi_hop=7）
+    </div>
+  </div>
+
+  <div class="diag-card">
+    <div class="diag-header">
+      <div class="diag-num">3</div>
+      <div class="diag-title">有据偏答</div>
+      <div class="diag-count">13 条 · F≥0.3 + AC&lt;0.4</div>
+    </div>
+    <div class="diag-body">
+      答案忠实于检索文档（F 尚可），但方向偏离了被问的核心内容。主要失败模式：① 选择性接地——文档有 A/B/C，问的是 A，模型答了 B/C；② 问题理解偏差——"X 的影响"被理解为"X 是什么"；③ 答案不完整——仅提取了文档中的部分关键点。
+      <div style="margin-top:8px"><span class="pattern-tag tag-warn">AC&lt;0.4</span> <span class="pattern-tag tag-accent">F≥0.3（有据）</span></div>
+    </div>
+    <div class="diag-fix">
+      <div class="diag-fix-label">已实施优化（Round 3）</div>
+      Rule 10 问题焦点锚定（agent.py）— 检索前明确答案对象，输出前对照自检，全题型生效，零额外 LLM 调用
+    </div>
+  </div>
+
+  <div class="diag-card">
+    <div class="diag-header">
+      <div class="diag-num">4</div>
+      <div class="diag-title">BGE Reranker 回归</div>
+      <div class="diag-count">9 条 · R1 good → R2 bad（新增回归）</div>
+    </div>
+    <div class="diag-body">
+      R2 迁移将 BGE Reranker 从 sentence-transformers（PyTorch）改为裸 ONNX Runtime，两者 sigmoid 分数分布存在系统性偏差，导致部分原本排名靠前的正确文档被重排到第 3–5 位。次要因素：rrf_final_top_k=10 截断候选池，正确文档落在 top-11+ 时永远无法被 reranker 发现。
+      <div style="margin-top:8px"><span class="pattern-tag tag-bad">R2 回归</span> <span class="pattern-tag tag-neutral">ONNX 分数漂移</span> <span class="pattern-tag tag-neutral">候选池截断</span></div>
+    </div>
+    <div class="diag-fix">
+      <div class="diag-fix-label">Round 3 优化方案</div>
+      rrf_final_top_k: 10→20 + reranker 分数&lt;0.35 时降级回 RRF 排序（retriever.py）
+    </div>
+  </div>
+
+  <!-- ── Round 3 Targets ── -->
+  <h2 class="section-heading">Round 3 目标对齐</h2>
+  <div class="target-block">
+    <div class="target-label">R1 → R2（已完成） / R2 → R3（目标）</div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Faithfulness</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.490</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.610</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 ≥0.70</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:70%"></div>
+        <div class="target-bar-r2" style="width:61%"></div>
+        <div class="target-bar-r1" style="width:49%"></div>
+        <div class="target-marker" style="left:70%"></div>
+      </div>
+    </div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Answer Correctness</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.590</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.594</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 ≥0.65</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:65%"></div>
+        <div class="target-bar-r2" style="width:59.4%"></div>
+        <div class="target-bar-r1" style="width:59%"></div>
+        <div class="target-marker" style="left:65%"></div>
+      </div>
+    </div>
+
+    <div class="target-metric" style="margin-bottom:0">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Answer Relevancy</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.633</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.643</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 ≥0.70</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:70%"></div>
+        <div class="target-bar-r2" style="width:64.3%"></div>
+        <div class="target-bar-r1" style="width:63.3%"></div>
+        <div class="target-marker" style="left:70%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Round 3 action plan ── -->
+  <h2 class="section-heading">Round 3 优化清单</h2>
+  <div class="card-full">
+    <div class="action-row">
+      <div class="action-num">1</div>
+      <div class="action-body">
+        <div class="action-title">Reasoning 幻觉 — Rule 8/9 + 运行时分类器 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        Evidence-First 证据提取前置步骤 + 答案输出前逐项证据自检 + Qwen3-4B 输出 QUESTION_TYPE 字段，规则匹配兜底，两级分类触发 Rule 8/9
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/core/query_rewrite/query_rewriter.py · src/main.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">2</div>
+      <div class="action-body">
+        <div class="action-title">Simple / Multi-hop 幻觉 — QUESTION_TYPE_RULES + 动态步数 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        按题型注入差异化约束规则 + max_steps 动态配置（simple=3 / reasoning=5 / multi_hop=7），防止步数截断导致推理空白
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/main.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">3</div>
+      <div class="action-body">
+        <div class="action-title">有据偏答 — Rule 10 问题焦点锚定 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        检索前明确直接答案对象，输出前对照答案对象自检，全题型生效，零额外 LLM 调用
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">4</div>
+      <div class="action-body">
+        <div class="action-title">BGE Reranker 回归 — 候选池扩容 + 分数降级兜底 <span class="pattern-tag tag-warn" style="margin-left:6px">进行中</span></div>
+        rrf_final_top_k: 10→20；reranker 最高分 &lt;0.35 时跳过 reranker 排序，直接返回 RRF top-k 结果
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">5</div>
+      <div class="action-body">
+        <div class="action-title">AR=0 Artifact — BGE-M3 嵌入 + 中文 question_generation <span class="pattern-tag tag-neutral" style="margin-left:6px">待处理</span></div>
+        修复 RAGAS 评估中 Answer Relevancy 为 0 的异常条目，根因为嵌入模型与 question_generation prompt 语言不匹配
+        <div class="action-file">src/core/evaluation/ · RAGAS 配置</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">6</div>
+      <div class="action-body">
+        <div class="action-title">CP/CR 循环偏差 — KB 派生问题去偏 <span class="pattern-tag tag-neutral" style="margin-left:6px">待处理</span></div>
+        评估集问题与 Ground Truth 均由 KB chunk 生成导致 CP/CR 虚高，需引入独立人工问题或交叉知识库评估集
+        <div class="action-file">评估方法论</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnotes">
+    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text · 重排: BGE-Reranker-v2 (ONNX)</span>
+    <span>评估框架: ragas 0.4.3 · 检索: Milvus 2.6 IVF_RABITQ + BM25 + RRF + BGE Rerank</span>
+    <span>CP / CR 受循环偏差影响，轮次内绝对值仅供参考，轮次间对比有效</span>
+    <span>生成时间: 2026-09-28 · Author: Ke Meng</span>
+  </div>
+
+</div>
+</body>
+</html>
