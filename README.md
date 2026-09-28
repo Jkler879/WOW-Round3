@@ -17,7 +17,7 @@ Round3目标：5项RAGAS原生指标对标生产上线标准 + 系统能力天�
 
   **根因：** 模型已检索到正确文档（Context Recall = 1.0），但在 ReAct推理链中混用了参数记忆作为论据，最终答案未能忠实于检索结果，未能拦截推理过程中的参数记忆渗入。
   
-  **优化方案：** 在 `agent.py` 的 system prompt 中强制插入 Evidence Extraction 前置步骤。模型必须先从检索结果中逐条列出原文证据，再在证据范围内推理，同时声明文档未覆盖的部分。此改动仅涉及 system prompt，LangGraph 图结构不变，实际生效时机为 **初次检索返回结果后**的agent_node 调用。
+  **优化方案1：** 在 `agent.py` 的 system prompt 中强制插入 Evidence Extraction 前置步骤。模型必须先从检索结果中逐条列出原文证据，再在证据范围内推理，同时声明文档未覆盖的部分。此改动仅涉及 system prompt，LangGraph 图结构不变，实际生效时机为 **初次检索返回结果后**的agent_node 调用。
 
   **相关论文观点支撑：**
   - 1、Evidence-First 是切断 post-rationalization 的核心手段。RAG 系统中高达 57%
@@ -40,4 +40,8 @@ Round3目标：5项RAGAS原生指标对标生产上线标准 + 系统能力天�
   *Dissociation of Faithful and Unfaithful Reasoning in LLMs* —https://arxiv.org/abs/2405.15092
 
 
-  优化2：在 ReAct 最终答案生成前增加 self-check step：列出每条推断对应的文档依据，无法对应的自动删除
+**优化方案2：** 在 `agent.py` 的 system prompt中，针对因果/推断类问题，要求模型在输出最终答案前逐项核查：答案中每一条推断或因果陈述，是否能在 Evidence Extraction步骤（优化1）列出的原文片段中找到直接对应依据。对于超出证据范围的内容，必须二选一：要么从答案中删除；要么以"（注：以下  为推断，文档无直接记载）"明确标注后保留。此改动同样仅涉及 system prompt，与优化1合并为一次 `agent.py` 修改，在同一次`agent_node` 调用中顺序执行。
+
+**与优化1的关系：** 优化1约束推理过程（推理前先提取证据），优化2约束输出结果（输出前验证每条推断有据可查）。二者分别
+  从推理层和输出层夹住参数记忆渗入的通道，形成完整闭环。Rule 7（证据不足时明确表态）、Rule 8（证据提取优先）、Rule
+  9（答案输出前自检）三条规则覆盖推断类问题的完整生命周期。
