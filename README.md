@@ -45,6 +45,7 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   - *Dissociation of Faithful and Unfaithful Reasoning in LLMs* —https://arxiv.org/abs/2405.15092
   - LLM 的 CoT 链存在忠实与非忠实两种模式，二者在输出文本上几乎无法区分，只有在推理前强制提取证据才能切断参数记忆渗入的通道。
 
+
 #### 2. Simple / Multi-hop 类型问题幻觉
 
   **规模：** 8 条 badcase，F < 0.3，非 reasoning 题型。
@@ -59,6 +60,7 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   | 添加问题分类器 | `查询改写模块` | Qwen3-4B 新增输出字段 `QUESTION_TYPE`，对用户问题进行simple/reasoning/multi-hop三分类任务，透传至 `AgentState` |
   | 不同类型执行规则 | `agent.py` `QUESTION_TYPE_RULES` | simple：事实冲突以文档为准并标注原文；multi_hop：拆解子问题 →每跳单独检索 →每跳标注来源 |
   | 动态 `max_steps` | `main.py`（流式 + 非流式接口） | simple=3 / reasoning=5 / multi_hop=7，为 multi_hop多跳检索提供足够步数空间（原系统采用硬上限5步锁死ReAct Agent循环步数） |
+
 
 #### 3. 答案焦点偏移
 
