@@ -41,4 +41,3 @@ Round3目标：5项RAGAS原生指标对标生产上线标准 + 系统能力天�
 
 
   优化2：在 ReAct 最终答案生成前增加 self-check step：列出每条推断对应的文档依据，无法对应的自动删除
-  优化3：针对 6 个持续顽固主题（Veganism / Goodfellas / Horror film 等）补充解释性 KB chunk，让检索文档本身可以提供推断所需信息，增量入库至知识库。
