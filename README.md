@@ -15,8 +15,6 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   [Round 2 RAGAS Diagnostic
   Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round2_diagnostic_report.html)
   
-  [Round 1 RAGAS Baseline
-  Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round1_baseline_report.html)
 
 ### Round 2 诊断及系统优化：
 
