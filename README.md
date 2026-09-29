@@ -18,21 +18,20 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   [Round 1 RAGAS Baseline
   Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round1_baseline_report.html)
 
-### Round 1 基准指标 + Round 2 验证指标：
-  ### 各轮次指标对比
+### 各轮次指标对比：
 
-  | 指标 | Round 1 基准 | Round 2 | 生产上线目标 |
-  |------|:-----------:|:--------------:|:-------:|
-  | Faithfulness (F) | 0.851 | **0.640** ↑| ≥0.70 |
-  | Answer Relevancy (AR) | 0.979 ⚠️| **0.643** ↑| ≥0.70 |
-  | Context Precision (CP) | 0.839| **0.950** ↑| ≥0.85 |
-  | Context Recall (CR) | 0.933 | **0.935** ↑| ≥0.85 |
-  | Answer Correctness (AC) | 0.869 ⚠️| **0.594** ↑| ≥0.65 |
+  | 指标 | Round 1 基准 | Round 2 | Round3 | 生产上线目标 |
+  |------|:-----------:|:-------:|:-------:|:----------:|                                   
+  | Faithfulness (F) | 0.490 | **0.610** ↑ |  | ≥ 0.70 |
+  | Answer Relevancy(AR) | 0.633 | **0.726** ↑|| ≥0.70 ✅|
+  | Context Precision (CP) | 0.947 ⚠️ | **0.950** ↑⚠️ |  | ≥ 0.85 |
+  | Context Recall (CR) | 0.903 ⚠️ | **0.937** ↑⚠️ |  | ≥ 0.85 |
+  | Answer Correctness (AC) | 0.590 | **0.594** ↑| | ≥0.65 |
+> ⚠️ CP / CR 当前虚高，根因为评估集由 Claude Sonnet 基于知识库 top 200 合成，模拟数据中的问题关键词汇与原文高度重叠且缺少口语化表达，导致检索难度被严重低估。Round 3 前已补充 60 条词汇多样化的模拟用户问题，预期 CP / CR将回落至真实水平（详情阅读下文：6、CP (0.950) CR (0.937) 值虚高）
 
-  
 ### Round 2 诊断及优化（7项系统优化）：
 
-#### 1. Reasoning 类型问题幻觉（优化前：FaithFulness 0.64）
+#### 1. Reasoning 类型问题幻觉（优化前：FaithFulness 0.61）
 
   **规模：** 16 条 badcase，占 badcase 总量 43%。
   
@@ -118,7 +117,7 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   **优化方案：**
   飞轮离线评估时，覆盖 RAGAS 内置的英文 question_generation 指令为中文版本，强制 Judge LLM 输出中文问题，消除跨语言失配，AR 恢复真实值。
 
-#### 6、CP (0.950) CR (0.937) 值虚高，需添加20-30条真实用户问题让指标回到真实水平
+#### 6、CP (0.950) CR (0.937) 值虚高
 
   
   **规模：** 183条全量评估集
