@@ -18,6 +18,17 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   [Round 1 RAGAS Baseline
   Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round1_baseline_report.html)
 
+### Round 1 基准指标 + Round 2 验证指标：
+  ### 各轮次指标对比
+
+  | 指标 | Round 1 基准 | Round 2 | 生产上线目标 |
+  |------|:-----------:|:--------------:|:-------:|
+  | Faithfulness (F) | 0.851 | **0.640** ↑| ≥0.70 |
+  | Answer Relevancy (AR) | 0.979 ⚠️| **0.643** ↑| ≥0.70 |
+  | Context Precision (CP) | 0.839| **0.950** ↑| ≥0.85 |
+  | Context Recall (CR) | 0.933 | **0.935** ↑| ≥0.85 |
+  | Answer Correctness (AC) | 0.869 ⚠️| **0.594** ↑| ≥0.65 |
+
   
 ### Round 2 诊断及优化（7项系统优化）：
 
