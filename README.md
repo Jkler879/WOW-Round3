@@ -9,8 +9,6 @@
 
 Round 1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告中。
 
-Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力天花板测试
-
 ### 完整飞轮报告：
   [Round 2 RAGAS Diagnostic
   Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round2_evaluation_report.html)
