@@ -77,13 +77,13 @@
   .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
   @media (max-width: 800px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 500px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
-  .metric-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 14px; position: relative; overflow: hidden; }
+  .metric-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 10px; position: relative; overflow: hidden; }
   .metric-tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 2px; border-radius: 10px 10px 0 0; }
   .metric-tile.good::before { background: var(--good); }
   .metric-tile.warn::before { background: var(--warn); }
   .metric-tile.bad::before  { background: var(--bad); }
   .metric-tile.neutral::before { background: var(--neutral); }
-  .tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
   .tile-value { font-family: var(--mono); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 6px; }
   .tile-value.good { color: var(--good); } .tile-value.warn { color: var(--warn); } .tile-value.bad { color: var(--bad); } .tile-value.neutral { color: var(--neutral); }
   .tile-delta { font-family: var(--mono); font-size: 11px; margin-bottom: 6px; }
@@ -204,7 +204,7 @@
       <span class="meta-chip"><span class="dot"></span>Judge LLM：qwen-plus</span>
       <span class="meta-chip"><span class="dot"></span>框架：ragas 0.4.3</span>
       <span class="meta-chip"><span class="dot"></span>样本：183 条</span>
-      <span class="meta-chip"><span class="dot"></span>评估集：183条，和 Round1 一致</span>
+      <span class="meta-chip"><span class="dot"></span>知识库：WoW 100 主题，100 条 chunks</span>
     </div>
   </header>
 
@@ -249,7 +249,8 @@
   </div>
 
   <div class="warn-callout">
-    <strong>CP / CR 词汇泄露偏差</strong> — 评估集由 Claude Sonnet 基于知识库 chunk 合成，问题词汇与 chunk 原文高度重叠，导致 BM25 精确匹配与向量检索均被高估，CP（0.950）/ CR（0.937）结构性虚高。Round 3 前已补充 60 条词汇多样化的模拟用户问题（paraphrase + 对抗性），预期 CP / CR 将回落至真实水平。<strong>Faithfulness 和 Answer Correctness 不受此偏差影响，是本轮最具诊断价值的指标。</strong>
+    <strong>CP / CR 结构性虚高</strong> — 评估集由 Claude Sonnet 基于知识库 chunk 合成，已是模拟用户数据，但生成问题缺乏口语化表达与关键词避让，问题词汇与 chunk 原文高度重叠，导致检索层天然易于命中，CP（0.950）/ CR（0.937）结构性虚高。这反映的是合成数据的词汇贴近性，而非检索系统面对真实用户问题的实际精度。轮次间相对比较仍然有效（各轮使用相同评估集），但绝对值不可对外引用。Round 3 前已补充 60 条词汇多样化问题（paraphrase + 对抗性），预期 CP / CR 将回落至真实水平。
+    <strong>Faithfulness、Answer Relevancy 和 Answer Correctness 不受此偏差影响，是最具诊断价值的指标。</strong>
   </div>
 
   <!-- ── R1 vs R2 Comparison ── -->
@@ -414,8 +415,11 @@
 
   <!-- ── Round 3 Targets ── -->
   <h2 class="section-heading">Round 3 目标对齐</h2>
+  <div class="insight" style="margin-bottom:16px">
+    <strong>对标生产上线指标</strong> — Round 3 的核心任务是验证所有 Round 2 优化在真实评估条件下生效，并确认各指标达到生产可上线门槛。以下目标值为系统上线的最低质量基准，任一项未达标则需继续迭代。
+  </div>
   <div class="target-block">
-    <div class="target-label">R1 → R2（已完成） / R2 → R3（目标）</div>
+    <div class="target-label">R1 → R2（已完成） / R2 → R3（生产上线目标）</div>
 
     <div class="target-metric">
       <div class="target-metric-header">
@@ -476,7 +480,7 @@
 
     <div class="target-metric">
       <div class="target-metric-header">
-        <span class="target-metric-name">Context Precision <span style="color:var(--warn);font-size:10px">⚠️ 词汇泄露偏差</span></span>
+        <span class="target-metric-name">Context Precision <span style="color:var(--warn);font-size:10px">⚠️ 结构性虚高</span></span>
         <span class="target-values">
           <span class="target-r1">R1 0.947⚠️</span>
           <span style="color:var(--text-faint);font-size:10px">→</span>
@@ -496,7 +500,7 @@
 
     <div class="target-metric" style="margin-bottom:0">
       <div class="target-metric-header">
-        <span class="target-metric-name">Context Recall <span style="color:var(--warn);font-size:10px">⚠️ 词汇泄露偏差</span></span>
+        <span class="target-metric-name">Context Recall <span style="color:var(--warn);font-size:10px">⚠️ 结构性虚高</span></span>
         <span class="target-values">
           <span class="target-r1">R1 0.903⚠️</span>
           <span style="color:var(--text-faint);font-size:10px">→</span>
@@ -545,8 +549,8 @@
     <div class="action-row">
       <div class="action-num">4</div>
       <div class="action-body">
-        <div class="action-title">优化 4 — BGE Reranker 彻底修复：TEI GPU FP16 迁移 + score_threshold 质量门控 + 候选池扩大 <span class="pattern-tag tag-warn" style="margin-left:6px">待服务器部署</span></div>
-        bge-reranker-v2-m3 FP16 通过 TEI（Text Embeddings Inference）GPU 部署，替换 ONNX INT8 CPU；score_threshold=0.45 过滤低质量候选；vector_top_k/bm25_top_k: 15→20，rrf_final_top_k: 15→25
+        <div class="action-title">优化 4 — BGE Reranker 彻底修复：TEI GPU FP16 迁移 + score_threshold 质量门控 + 候选池扩大 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        bge-reranker-v2-m3 FP16 通过 TEI（Text Embeddings Inference）GPU 部署，替换 ONNX INT8 CPU；实测重排延迟 36.4ms vs ONNX 1359ms，提速 37×；score_threshold=0.45 过滤低质量候选（低于阈值时保留 top1 兜底）；vector_top_k/bm25_top_k: 15→20，rrf_final_top_k: 15→25
         <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · config/config_path.py · docker-compose.yml · src/main.py · config/paths.py</div>
       </div>
     </div>
@@ -577,7 +581,7 @@
   </div>
 
   <div class="footnotes">
-    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX INT8 · 重排: BGE-Reranker-v2-m3（Round 3 升级为 TEI FP16 GPU）</span>
+    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX INT8 · 重排: BGE-Reranker-v2-m3 TEI FP16 GPU（已部署，36.4ms）</span>
     <span>评估框架: ragas 0.4.3 · 检索: Milvus 2.6 IVF_RABITQ + BM25 + RRF + BGE Rerank · 显著性检验: Mann-Whitney U + Bootstrap CI + Cohen's d</span>
     <span>CP / CR 受词汇泄露偏差影响虚高；AR R2 值为修复英文 prompt 后的真实值 0.726</span>
     <span>生成时间: 2026-09-28 · 更新: 2026-09-29 · Author: Ke Meng</span>

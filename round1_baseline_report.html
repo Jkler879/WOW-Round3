@@ -94,13 +94,13 @@
   .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 36px; }
   @media (max-width: 800px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 500px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
-  .metric-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 14px; position: relative; overflow: hidden; }
+  .metric-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 10px; position: relative; overflow: hidden; }
   .metric-tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 2px; border-radius: 10px 10px 0 0; }
   .metric-tile.good::before { background: var(--good); }
   .metric-tile.warn::before { background: var(--warn); }
   .metric-tile.bad::before  { background: var(--bad); }
   .metric-tile.neutral::before { background: var(--neutral); }
-  .tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
   .tile-value { font-family: var(--mono); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 8px; }
   .tile-value.good { color: var(--good); } .tile-value.warn { color: var(--warn); } .tile-value.bad { color: var(--bad); } .tile-value.neutral { color: var(--neutral); }
   .tile-bar-track { height: 3px; background: var(--surface-3); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
@@ -231,11 +231,8 @@
   </div>
 
   <div class="warn-callout">
-    <strong>循环偏差（Circular Bias）</strong> — 本批次评估集的 Question 与 Ground Truth 均由知识库 chunk 生成，
-    导致 Context Precision（0.947）和 Context Recall（0.903）结构性虚高。
-    这两个高分反映的是评估集设计的内生一致性，而非检索系统的真实精度。
-    轮次间相对比较仍然有效（Round 1 vs Round 2 使用相同评估集），但绝对值不可对外引用。
-    <strong>Faithfulness 和 Answer Correctness 受循环偏差影响最小，是本轮最具诊断价值的指标。</strong>
+    <strong>CP / CR 结构性虚高</strong> — 评估集由 Claude Sonnet 基于知识库 chunk 合成，已是模拟用户数据，但生成问题缺乏口语化表达与关键词避让，问题词汇与 chunk 原文高度重叠，导致检索层天然易于命中，Context Precision 和 Context Recall 结构性虚高。这反映的是合成数据的词汇贴近性，而非检索系统面对真实用户问题的实际精度。轮次间相对比较仍然有效（各轮使用相同评估集），但绝对值不可对外引用。Round 3 前已补充 60 条词汇多样化问题（paraphrase + 对抗性），预期 CP / CR 将回落至真实水平。
+    <strong>Faithfulness、Answer Relevancy 和 Answer Correctness 不受此偏差影响，是最具诊断价值的指标。</strong>
   </div>
 
   <div class="two-col">
@@ -313,13 +310,13 @@
   <div class="badcase-stats">
     <div class="stat-tile">
       <div class="stat-tile-label">Badcase 总数</div>
-      <div class="stat-tile-value" style="color:var(--bad)">73</div>
-      <div class="stat-tile-sub">占 180 条的 40.6%</div>
+      <div class="stat-tile-value" style="color:var(--bad)">62</div>
+      <div class="stat-tile-sub">占 180 条的 34.4%（F=None 13 条已排除）</div>
     </div>
     <div class="stat-tile">
       <div class="stat-tile-label">F &lt; 0.3（严重幻觉）</div>
-      <div class="stat-tile-value" style="color:var(--bad)">49</div>
-      <div class="stat-tile-sub">含 F=None 13 条</div>
+      <div class="stat-tile-value" style="color:var(--bad)">36</div>
+      <div class="stat-tile-sub">F=None 13 条已排除</div>
     </div>
     <div class="stat-tile">
       <div class="stat-tile-label">AC &lt; 0.4（答案偏差）</div>
@@ -328,8 +325,8 @@
     </div>
     <div class="stat-tile">
       <div class="stat-tile-label">Reasoning 题占比</div>
-      <div class="stat-tile-value" style="color:var(--warn)">58%</div>
-      <div class="stat-tile-sub">42 条 / 73 条 badcase</div>
+      <div class="stat-tile-value" style="color:var(--warn)">68%</div>
+      <div class="stat-tile-sub">42 条 / 62 条 badcase</div>
     </div>
   </div>
 
@@ -370,7 +367,7 @@
         </tbody>
       </table>
     </div>
-    <div style="font-size:11px;color:var(--text-faint);margin-top:10px;font-family:var(--mono)">注：类别 01/04 根因相同，Rule 7 修复后 F=None 预计同步消除。各类别存在重叠。</div>
+    <div style="font-size:11px;color:var(--text-faint);margin-top:10px;font-family:var(--mono)">注：各类别存在重叠。</div>
   </div>
 
   <div class="card-full">
@@ -439,7 +436,7 @@
 
   <div class="footnotes">
     <span>数据来源：data/evaluation/ragas_results_batch_1.json | 评估脚本：scripts/run_ragas_offline.py</span>
-    <span>Badcase 来源：data/evaluation/badcases_batch_1.json（73 条）| 提取脚本：scripts/extract_badcases.py</span>
+    <span>Badcase 来源：data/evaluation/badcases_batch_1.json（62 条，F=None 13 条已排除）| 提取脚本：scripts/extract_badcases.py</span>
     <span>有效样本：F=167/180（13 None），AR=167/180，CP=172/180，CR=172/180，AC=168/180（12 None）</span>
     <span>Round 1 检索 bug（重复 chunk）已在 Round 2 系统中修复；本评估集已预处理去重以反映真实检索行为</span>
   </div>
