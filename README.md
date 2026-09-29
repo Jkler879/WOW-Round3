@@ -84,3 +84,36 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   | **预期收益** | Answer Correctness ↑，尤其针对选择性接地和问题理解偏差两类失败模式|
   | **论文引用** | [Before Reasoning Fails](https://arxiv.org/abs/2608.02011)（2026）；[What Would Fix This RAGFailure?](https://arxiv.org/abs/2608.08944)（2026）|
 
+#### 4. Reranker引发回归
+
+  **规模：** 相比 Round 1 新增 9 条 badcase
+  
+  **根因：** 
+
+  **优化方案：**
+  1、原重排模型为 BGE-rerank-v2-m3 int8自量化版本，现升级为 FP32 原版模型
+  2、重排模型从 CPU 移植至 GPU，由 TEI 框架负责部署，内置 FP 16 量化
+
+#### 5. RAGAS 评估框架内置英文提示词造成 AR 指标虚低 
+
+  **规模：** Round 2 共 183 条评估数据，37 条 AR 直接归零，整体 AR 均值受拖累 从 0.79 跌至 0.63，偏离真实水平。
+  
+  **根因：** 
+  
+  1、RAGAS 框架 AnswerRelevancy 内置英文 prompt，驱动 Judge LLM 从中文答案反推问题
+  
+  2、Judge LLM（qwen-plus）收到英文指令 + 中文答案，对 37 条数据生成了英文问题，与中文原始问题做 embedding 相似度时跨语言失配，余弦相似度归零。并非系统真实表现，是评估框架的语言错配导致的虚假低分
+
+  **优化方案：**
+  飞轮离线评估时，覆盖 RAGAS 内置的英文 question_generation 指令为中文版本，强制 Judge LLM 输出中文问题，消除跨语言失配，AR 恢复真实值。
+
+#### 6、CP CR值虚高，需添加20-30条真实用户问题让指标回到真实水平
+
+  **规模：** 183条全量评估集
+  
+  **根因：**   
+  评估集是从知识库top 200 中抽取并冻结的数据，交给 LLM Claude Sonnet 5.0 生成虚拟用户提问和标准答案。
+
+  **优化方案：**
+  
+  
