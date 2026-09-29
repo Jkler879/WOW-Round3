@@ -157,7 +157,7 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   | [DataMorgana / SIGIR LiveRAG (2025)](https://arxiv.org/html/2501.12789v1) | 生产级 RAG评估需要多样化问题类型，覆盖词汇鸿沟场景 |
   | [Synthetic Question Generation for RetrievalEvaluation](https://suzyahyah.github.io/nlp/2024/08/03/Retrieval-Evaluation.html) | LLM生成问题天然继承源文本词汇，导致检索评估偏乐观 |
 
-  #### 7、FF 改进统计显著性未认证，未做假设检验
+  #### 7、F 改进统计显著性未认证，未做假设检验
   
   **规模：** Round2 全量 183 条评估数据
 
