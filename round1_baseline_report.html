@@ -308,56 +308,7 @@
     <div style="font-size:11px;color:var(--text-faint);margin-top:10px;font-family:var(--mono)">— 表示 AC 因 LLM 调用未完成返回 None，已计入 12 条 AC None 中。</div>
   </div>
 
-  <h2 class="section-heading">Round 2 提升预测</h2>
-
-  <div class="expectation-row">
-    <div class="forecast-card">
-      <div class="forecast-header">
-        <div class="forecast-metric">Faithfulness</div>
-        <div class="forecast-badge badge-moderate">中等提升预期</div>
-      </div>
-      <div class="forecast-arrow">
-        <span class="forecast-from">0.490</span>
-        <span class="forecast-arrow-sym">→</span>
-        <span class="forecast-to">0.58–0.65</span>
-      </div>
-      <div class="forecast-range">相对提升约 +18% ~ +33%，绝对值 +0.09 ~ +0.16</div>
-      <div class="forecast-bar-track">
-        <div class="forecast-bar-target" style="width:65%"></div>
-        <div class="forecast-bar-now" style="width:49%"></div>
-      </div>
-      <div class="forecast-driver">
-        <div class="driver-item"><span class="driver-bullet up">↑</span><span>System prompt 新增 Rule 7：推断题证据不足时必须明确表态，直接压制参数记忆越界。</span></div>
-        <div class="driver-item"><span class="driver-bullet up">↑</span><span>低分阈值 0.2→0.35 + Rule 4 强化接地约束，减少低质量检索时的幻觉填补行为。</span></div>
-        <div class="driver-item"><span class="driver-bullet up">↑</span><span>BGE reranker + RRF fusion 提升检索文档质量，为 LLM 提供更精准的锚点。</span></div>
-        <div class="driver-item"><span class="driver-bullet cap">⊘</span><span>Reasoning 类问题（占 43%）结构性困难难以完全消除；预期 Reasoning F 从 0.351 升至 0.45–0.55。</span></div>
-      </div>
-    </div>
-    <div class="forecast-card">
-      <div class="forecast-header">
-        <div class="forecast-metric">Answer Correctness</div>
-        <div class="forecast-badge badge-modest">温和提升预期</div>
-      </div>
-      <div class="forecast-arrow">
-        <span class="forecast-from">0.590</span>
-        <span class="forecast-arrow-sym">→</span>
-        <span class="forecast-to">0.62–0.68</span>
-      </div>
-      <div class="forecast-range">相对提升约 +5% ~ +15%，绝对值 +0.03 ~ +0.09</div>
-      <div class="forecast-bar-track">
-        <div class="forecast-bar-target" style="width:68%"></div>
-        <div class="forecast-bar-now" style="width:59%"></div>
-      </div>
-      <div class="forecast-driver">
-        <div class="driver-item"><span class="driver-bullet up">↑</span><span>更好的检索 → 答案内容更贴近 GT chunk 的核心声明 → 声明级 F1 提升。</span></div>
-        <div class="driver-item"><span class="driver-bullet up">↑</span><span>幻觉减少 → 错误声明减少 → 分子（正确声明数）提升。</span></div>
-        <div class="driver-item"><span class="driver-bullet cap">⊘</span><span><strong style="color:var(--warn)">天花板效应（主因）：</strong>GT 由单 chunk 生成，系统答案更长。Round 2 无法从根本上改变评估集设计，这是 AC 提升幅度受限的结构性原因。</span></div>
-        <div class="driver-item"><span class="driver-bullet cap">⊘</span><span>12 条 AC=None 若 Round 2 仍复现，会保持同等比例，对均值影响稳定。</span></div>
-      </div>
-    </div>
-  </div>
-
-  <h2 class="section-heading" style="margin-top:12px;">Badcase 分析（Round 1）</h2>
+  <h2 class="section-heading">Badcase 分析（Round 1）</h2>
 
   <div class="badcase-stats">
     <div class="stat-tile">
@@ -423,71 +374,65 @@
   </div>
 
   <div class="card-full">
-    <div class="card-title">5 项优化措施（已完成，Round 2 待验证）</div>
+    <div class="card-title">7 项优化措施（已完成，Round 2 待验证）</div>
     <div class="action-row" style="border-top:none;padding-top:0">
       <div class="action-num">1</div>
       <div class="action-body">
-        <div class="action-title">agent.py — Rule 7：推断题证据不足时明确表态</div>
-        <div>遇到"为什么""原因是什么"等因果推断类问题，若检索文档不含直接证据，必须明确回答"暂无足够信息支撑对该问题的完整推断"；严禁使用"可能""一般而言"等无依据推断措辞。</div>
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · 针对根因 #01 #04 · P0</div>
+        <div class="action-title">知识库全量重建 — BM25 全文检索改走单独 <code>cs_text</code> 字段</div>
+        <div>根本问题：向量检索对单条 <code>cs_text</code> 做嵌入，BM25 却检索 <code>content</code>（多条 cs_text 拼接而成的长文本），关键词可能命中拼接文本中的任意一句，<strong>匹配精度被长文本稀释，BM25 路召回质量劣化</strong>。重建后 BM25 Function 单独索引 <code>cs_text</code> 字段，与向量嵌入粒度对齐；LLM 接收仍为完整 <code>content</code>（多句段落），遵循 Small-to-Big 检索策略：细粒度匹配、段落级生成。</div>
+        <div class="action-file">src/core/redis-stream/create_milvus_collection.py · 影响全链路检索质量 · P0</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">2</div>
       <div class="action-body">
-        <div class="action-title">agent.py — 回复风格：聚焦问题</div>
-        <div>只回答用户实际提出的问题，不主动展开未询问的相关背景或关联话题；需补充时须先完整回答原问题再另起一段标注"补充"。</div>
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · 针对根因 #02 · P0</div>
+        <div class="action-title">检索去重修复 — RRF 后、重排前去重</div>
+        <div>Round 1 存在重复 chunk 进入重排阶段的 bug，导致同一文档内容被多次计分、占用 topK 名额。修复后在 RRF 融合之后、重排之前新增去重逻辑，确保每条 chunk 唯一。</div>
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · 针对检索 bug · P0</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">3</div>
       <div class="action-body">
-        <div class="action-title">agent.py — 低分阈值 0.2 → 0.35 + Rule 4 强化接地约束</div>
-        <div>低分兜底阈值从 0.2 提升至 0.35；Rule 4 删除"自信"引用措辞，改为"直接引用文档内容作答，须严格遵守接地约束，不得扩展至文档未涵盖的内容"。</div>
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · 针对根因 #01 · P0</div>
+        <div class="action-title">重排保底阈值修复 — 硬切改为软兜底，决策权交还 LLM</div>
+        <div>原逻辑：所有重排文档分数 &lt; −5.0 才返回空，阈值极松几乎无效。修复后：所有分数 &lt; −1.0 时仍返回 top1（不返回空），阈值收紧且保证 LLM 始终有文档可参考，由 LLM 判断内容是否可用，避免检索层硬切导致的无结果兜底问题。</div>
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · 针对检索噪声 · P0</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">4</div>
       <div class="action-body">
-        <div class="action-title">query_rewriter.py — Rule 6 "完整性" → "范围保真"</div>
-        <div>改写后的问题覆盖范围不应宽于原始问题，只填补指代消解所需的最小上下文，不扩展原问题未涉及的维度。</div>
-        <div class="action-file">src/core/query_rewrite/query_rewriter.py · 针对根因 #02 · P0</div>
+        <div class="action-title">RRF topK 扩容 10 → 15，重排候选集增加</div>
+        <div>RRF 融合后送入重排的候选文档从 10 条扩至 15 条，重排器在更大候选池中筛选，输出 topK 不变（仍为 5 条），提升精排质量上限。</div>
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · 提升重排质量 · P1</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">5</div>
       <div class="action-body">
-        <div class="action-title">KB 扩容 — 6 条解释性 chunk 入库</div>
-        <div>针对 CR=0 的 6 个主题（Parenting / Pizza / Tomato / Field hockey / Unicorn / Dragon），生成英文解释性内容（1000–1310 字/条），通过 producer.py 注入 Milvus。</div>
+        <div class="action-title">KB 扩容 — 6 条 Badcase 解释性 chunk 入库</div>
+        <div>Round 1 共识别 73 条 Badcase，其中 6 个主题（Parenting / Pizza / Tomato / Field hockey / Unicorn / Dragon）CR=0，知识库无对应内容。针对这 6 个主题生成英文解释性内容并增量入库，补齐 KB 覆盖缺口。</div>
         <div class="action-file">data/processed/chunks/wow_supplement_badcase6.json · 针对根因 #03 · P1</div>
       </div>
     </div>
-  </div>
-
-  <div class="card-full">
-    <div class="card-title">结论 — Round 1 基线诊断</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">系统主要问题</div>
-        <div class="insight" style="margin-bottom:8px;">
-          <strong>幻觉（Faithfulness 0.490）</strong>：接近一半的答案声明无法被检索文档支撑。集中于 Reasoning 类问题（F=0.351）和高参数知识密度主题。根因是 qwen3-30b 在 CoT 推理中倾向调用参数记忆填充逻辑缺口。
+    <div class="action-row">
+      <div class="action-num">6</div>
+      <div class="action-body">
+        <div class="action-title">System Prompt 三项优化 — 幻觉抑制 + 答案聚焦</div>
+        <div>
+          <div style="margin-bottom:4px">① <strong>回复风格第3条（新增）</strong>：只回答被问到的内容，补充信息须后置并标注，避免答案发散 → <span style="color:var(--warn)">AR ↑</span></div>
+          <div style="margin-bottom:4px">② <strong>Rule 3</strong>：低分阈值 0.2 → 0.35，低分区明确禁止以内置知识填补 → <span style="color:var(--warn)">F ↑</span></div>
+          <div>③ <strong>Rule 4</strong>：删除"自信"措辞，改为"直接引用文档内容，严格遵守接地约束" → <span style="color:var(--warn)">F ↑</span></div>
         </div>
-        <div class="insight" style="margin-bottom:0">
-          <strong>答案质量（AC 0.590）</strong>：答案与 GT 的对齐度中等，受幻觉拉低且受 GT 简短的结构性天花板限制。
-        </div>
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · 针对根因 #01 #02 · P0</div>
       </div>
-      <div>
-        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;">Round 2 可信度说明</div>
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.8;">
-          <div style="margin-bottom:6px;">✓ 全 180 条由 RAGAS 框架独立评估，无自定义逻辑</div>
-          <div style="margin-bottom:6px;">✓ Judge LLM：qwen-plus（Round 2 同一模型同一评估集）</div>
-          <div style="margin-bottom:6px;">✓ 评估集已预处理去重（900→333 contexts，63% 压缩）</div>
-          <div style="margin-bottom:6px;">✓ CP/CR 虚高已明确标注，不参与系统质量判断</div>
-          <div style="margin-bottom:6px;">⚠ Round 2 应重点观察 Faithfulness 和 Answer Correctness</div>
-          <div>⚠ CP/CR 提升可作为检索质量改善的辅助指标</div>
-        </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">7</div>
+      <div class="action-body">
+        <div class="action-title">查询改写 Prompt — Rule 6 "完整性" → "范围保真"</div>
+        <div>原 Rule 6 要求"确保生成的问题包含所有必要上下文"，导致改写后问题范围宽于原问题（如原问"导演是谁"被扩展出"拍摄背景""上映时间"）。修改后仅允许填补指代消解所需的最小上下文，改写覆盖范围不得宽于原始问题。</div>
+        <div class="action-file">src/core/query_rewrite/query_rewriter.py · 针对根因 #02 · P0</div>
       </div>
     </div>
   </div>
