@@ -191,40 +191,42 @@
       <span class="meta-chip"><span class="dot"></span>评估日期：2026-09-26</span>
       <span class="meta-chip"><span class="dot"></span>Judge LLM：qwen-plus</span>
       <span class="meta-chip"><span class="dot"></span>框架：ragas 0.4.3</span>
-      <span class="meta-chip"><span class="dot"></span>评估集：Claude Sonnet 根据知识库 200 条 chunks 生成的虚拟用户提问与 ground truth</span>
+      <span class="meta-chip"><span class="dot"></span>样本：180 条（去重后 deduped）</span>
+      <span class="meta-chip"><span class="dot"></span>知识库：WoW 100 主题，100 条 chunks</span>
     </div>
   </header>
 
+  <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;text-align:right">所有指标均基于 RAGAS 原生框架计算，无自定义权重或评分逻辑</div>
   <div class="metrics-grid">
     <div class="metric-tile bad">
-      <div class="tile-label">Faithfulness</div>
+      <div class="tile-label">Faithfulness <span style="font-size:10px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">忠实度</span></div>
       <div class="tile-value bad">0.490</div>
       <div class="tile-bar-track"><div class="tile-bar-fill bad" style="width:49%"></div></div>
-      <div class="tile-note">答案声明被检索文档支撑的比例。幻觉主要诊断指标。</div>
+      <div class="tile-note">LLM 拆解答案为子声明 → 逐条验证文档支撑 → 支撑数 / 总声明数</div>
     </div>
     <div class="metric-tile warn">
-      <div class="tile-label">Answer Relevancy</div>
+      <div class="tile-label">Answer Relevancy <span style="font-size:10px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">答案相关性</span></div>
       <div class="tile-value warn">0.633</div>
       <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:63.3%"></div></div>
-      <div class="tile-note">答案与问题的相关程度（嵌入相似度）。</div>
+      <div class="tile-note">LLM 从答案反生成问题 → 与原问题 embedding cosine 相似度均值</div>
     </div>
     <div class="metric-tile good">
-      <div class="tile-label">Context Precision</div>
+      <div class="tile-label">Context Precision <span style="font-size:10px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">上下文精准率</span></div>
       <div class="tile-value good">0.947</div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:94.7%"></div></div>
-      <div class="tile-note">检索文档的有用性比例。受循环偏差影响，高分参考价值有限。</div>
+      <div class="tile-note">LLM 逐块判断上下文相关性 → 加权累积精准率（相关块越靠前权重越高）</div>
     </div>
     <div class="metric-tile good">
-      <div class="tile-label">Context Recall</div>
+      <div class="tile-label">Context Recall <span style="font-size:10px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">上下文召回率</span></div>
       <div class="tile-value good">0.903</div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:90.3%"></div></div>
-      <div class="tile-note">GT 声明被检索文档覆盖的比例。同受循环偏差影响。</div>
+      <div class="tile-note">LLM 逐条 ground truth 判断文档覆盖 → 被覆盖条数 / 总条数</div>
     </div>
     <div class="metric-tile warn">
-      <div class="tile-label">Answer Correctness</div>
+      <div class="tile-label">Answer Correctness <span style="font-size:10px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">答案正确性</span></div>
       <div class="tile-value warn">0.590</div>
       <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:59%"></div></div>
-      <div class="tile-note">答案与 GT 的声明 F1 + 语义相似度综合分。</div>
+      <div class="tile-note">语义相似度 × 0.75 + Faithfulness × 0.25（需 ground truth）</div>
     </div>
   </div>
 

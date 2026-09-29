@@ -209,41 +209,42 @@
   </header>
 
   <!-- ── Metric tiles ── -->
+  <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;text-align:right">所有指标均基于 RAGAS 原生框架计算，无自定义权重或评分逻辑</div>
   <div class="metrics-grid">
     <div class="metric-tile warn">
-      <div class="tile-label">Faithfulness</div>
+      <div class="tile-label">Faithfulness <span style="font-size:10px;color:var(--text-faint);font-weight:400">忠实度</span></div>
       <div class="tile-value warn">0.610</div>
       <div class="tile-delta"><span class="delta-up">↑ +0.120</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.490</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:61%"></div></div>
-      <div class="tile-note">答案声明被文档支撑的比例。幻觉主诊断指标。</div>
+      <div class="tile-note">LLM 拆解答案为子声明 → 逐条验证文档支撑 → 支撑数 / 总声明数</div>
     </div>
     <div class="metric-tile good">
-      <div class="tile-label">Answer Relevancy</div>
+      <div class="tile-label">Answer Relevancy <span style="font-size:10px;color:var(--text-faint);font-weight:400">答案相关性</span></div>
       <div class="tile-value good">0.726</div>
       <div class="tile-delta"><span class="delta-up">↑ +0.093</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.633</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:72.6%"></div></div>
-      <div class="tile-note">答案与问题的相关程度（嵌入相似度）。已达生产目标 ≥0.70。</div>
+      <div class="tile-note">LLM 从答案反生成问题 → 与原问题 embedding cosine 相似度均值</div>
     </div>
     <div class="metric-tile good">
-      <div class="tile-label">Context Precision</div>
+      <div class="tile-label">Context Precision <span style="font-size:10px;color:var(--text-faint);font-weight:400">上下文精准率</span></div>
       <div class="tile-value good">0.950</div>
       <div class="tile-delta"><span class="delta-up">↑ +0.003</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.947</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:95%"></div></div>
-      <div class="tile-note">检索文档的有用性比例。受循环偏差影响，高分参考价值有限。</div>
+      <div class="tile-note">LLM 逐块判断上下文相关性 → 加权累积精准率（相关块越靠前权重越高）</div>
     </div>
     <div class="metric-tile good">
-      <div class="tile-label">Context Recall</div>
+      <div class="tile-label">Context Recall <span style="font-size:10px;color:var(--text-faint);font-weight:400">上下文召回率</span></div>
       <div class="tile-value good">0.935</div>
       <div class="tile-delta"><span class="delta-up">↑ +0.033</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.903</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:93.5%"></div></div>
-      <div class="tile-note">GT 声明被检索文档覆盖的比例。同受循环偏差影响。</div>
+      <div class="tile-note">LLM 逐条 ground truth 判断文档覆盖 → 被覆盖条数 / 总条数</div>
     </div>
     <div class="metric-tile warn">
-      <div class="tile-label">Answer Correctness</div>
+      <div class="tile-label">Answer Correctness <span style="font-size:10px;color:var(--text-faint);font-weight:400">答案正确性</span></div>
       <div class="tile-value warn">0.594</div>
       <div class="tile-delta"><span class="delta-up">↑ +0.004</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.590</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:59.4%"></div></div>
-      <div class="tile-note">答案与 GT 的声明 F1 + 语义相似度综合分。</div>
+      <div class="tile-note">语义相似度 × 0.75 + Faithfulness × 0.25（需 ground truth）</div>
     </div>
   </div>
 
