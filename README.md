@@ -107,13 +107,49 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   **优化方案：**
   飞轮离线评估时，覆盖 RAGAS 内置的英文 question_generation 指令为中文版本，强制 Judge LLM 输出中文问题，消除跨语言失配，AR 恢复真实值。
 
-#### 6、CP CR值虚高，需添加20-30条真实用户问题让指标回到真实水平
+#### 6、CP (0.950) CR (0.937) 值虚高，需添加20-30条真实用户问题让指标回到真实水平
 
+  
   **规模：** 183条全量评估集
   
   **根因：**   
-  评估集是从知识库top 200 中抽取并冻结的数据，交给 LLM Claude Sonnet 5.0 生成虚拟用户提问和标准答案。
-
+  1、评估集是从知识库top 200 中抽取并冻结的数据，交给 LLM Claude Sonnet 5.0 生成虚拟用户提问和标准答案。
+  
+  2、Claude Sonnet 从 chunk 文本生成问题时，问题的词汇天然来自 chunk 本身。
+    
+    - BM25 看到问题关键词，精确匹配 chunk → CP 虚高
+    
+    - 向量检索 问题 embedding 与 chunk embedding 高度相近（语义本就来自同一段文本）→ CR 虚高
+    
+  3、真实用户问题的本质区别：词汇鸿沟（Vocabulary Gap）包含大量日常用语、同义词、缩写 / 句子长度短促稀疏 / 关键词重叠极低
+  
+  真实用户问法：
+  
+    - "滑雪比赛穿过森林那种是怎么玩的？"  ←没有 "cross-country" "groomed course" 等关键词
+  
+    - "泰勒斯威夫特唱什么类型的歌"       ←而不是 "Taylor Swift 的音乐风格是什么"
+  
+    - "自闭症小孩有什么表现"              ←而不是 "自闭症的主要症状有哪些"
+  
   **优化方案：**
+  | 方案 | 做法 | 规模 |
+  |------|------|---------|
+  | **改写现有问题** | 对现有合成问题做 paraphrase，指令约束"改用口语化表达" | 30条，满足中心极限定理，看清指标方向 |
+  | **回避关键词** | LLM 生成时禁止使用 chunk 原文关键词汇 | 30条，总量 60 条，误差 ±5%，可信 |
+  | **混合评估** | 与原评估集一起送入系统，CR/CP得到真实指标 | 183 原评估集 + 60 条模拟真实用户评估集 |
+  
+
+  **参考文献：**
+  | 论文 | 结论 |
+  |------|------|
+  | [Beyond Benchmark Scores (2025)](https://arxiv.org/pdf/2609.14579) | 合成问题 CP虚高，真实用户查询词汇极度稀疏，两者分布存在根本性差异 |
+  | [Can we Evaluate RAGs with Synthetic Data? (2025)](https://arxiv.org/pdf/2508.11758) |合成评估集对检索策略选择产生误导，基于合成数据的优化在真实流量上无实际收益 |
+  | [DataMorgana / SIGIR LiveRAG (2025)](https://arxiv.org/html/2501.12789v1) | 生产级 RAG评估需要多样化问题类型，覆盖词汇鸿沟场景 |
+  | [Synthetic Question Generation for RetrievalEvaluation](https://suzyahyah.github.io/nlp/2024/08/03/Retrieval-Evaluation.html) | LLM生成问题天然继承源文本词汇，导致检索评估偏乐观 |
+
+  
+
+  
+
   
   
