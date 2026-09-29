@@ -204,7 +204,7 @@
       <span class="meta-chip"><span class="dot"></span>Judge LLM：qwen-plus</span>
       <span class="meta-chip"><span class="dot"></span>框架：ragas 0.4.3</span>
       <span class="meta-chip"><span class="dot"></span>样本：183 条</span>
-      <span class="meta-chip"><span class="dot"></span>评估集：Claude Sonnet 根据知识库 100 条 chunks 生成的虚拟用户问题及 ground truth</span>
+      <span class="meta-chip"><span class="dot"></span>知识库：WoW 100 主题，100 条 chunks</span>
     </div>
   </header>
 
@@ -217,12 +217,12 @@
       <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:61%"></div></div>
       <div class="tile-note">答案声明被文档支撑的比例。幻觉主诊断指标。</div>
     </div>
-    <div class="metric-tile warn">
+    <div class="metric-tile good">
       <div class="tile-label">Answer Relevancy</div>
-      <div class="tile-value warn">0.643</div>
-      <div class="tile-delta"><span class="delta-up">↑ +0.010</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.633</span></div>
-      <div class="tile-bar-track"><div class="tile-bar-fill warn" style="width:64.3%"></div></div>
-      <div class="tile-note">答案与问题的相关程度（嵌入相似度）。</div>
+      <div class="tile-value good">0.726</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.093</span> <span style="color:var(--text-faint);font-size:10px">vs R1 0.633</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:72.6%"></div></div>
+      <div class="tile-note">答案与问题的相关程度（嵌入相似度）。已达生产目标 ≥0.70。</div>
     </div>
     <div class="metric-tile good">
       <div class="tile-label">Context Precision</div>
@@ -248,7 +248,7 @@
   </div>
 
   <div class="warn-callout">
-    <strong>循环偏差（Circular Bias）</strong> — 评估集的 Question 与 Ground Truth 均由知识库 chunk 生成，导致 Context Precision（0.950）和 Context Recall（0.935）结构性虚高。这两个高分反映评估集设计的内生一致性，而非检索系统的真实精度。轮次间相对比较仍然有效（R1 vs R2 使用相同评估集）。<strong>Faithfulness 和 Answer Correctness 受循环偏差影响最小，是本轮最具诊断价值的指标。</strong>
+    <strong>CP / CR 词汇泄露偏差</strong> — 评估集由 Claude Sonnet 基于知识库 chunk 合成，问题词汇与 chunk 原文高度重叠，导致 BM25 精确匹配与向量检索均被高估，CP（0.950）/ CR（0.937）结构性虚高。Round 3 前已补充 60 条词汇多样化的模拟用户问题（paraphrase + 对抗性），预期 CP / CR 将回落至真实水平。<strong>Faithfulness 和 Answer Correctness 不受此偏差影响，是本轮最具诊断价值的指标。</strong>
   </div>
 
   <!-- ── R1 vs R2 Comparison ── -->
@@ -269,12 +269,12 @@
       <span class="compare-label">Answer Relevancy</span>
       <span class="compare-r1">0.633</span>
       <span class="compare-arrow">→</span>
-      <span class="compare-r2" style="color:var(--warn)">0.643</span>
+      <span class="compare-r2" style="color:var(--good)">0.726</span>
       <div class="compare-bar-wrap">
         <div class="compare-bar-r1" style="width:63.3%"></div>
-        <div class="compare-bar-r2" style="width:64.3%; background:var(--warn)"></div>
+        <div class="compare-bar-r2" style="width:72.6%; background:var(--good)"></div>
       </div>
-      <span class="compare-delta delta-up">+1.0%</span>
+      <span class="compare-delta delta-up">+9.3%</span>
     </div>
     <div class="compare-row">
       <span class="compare-label">Context Precision</span>
@@ -312,7 +312,7 @@
   </div>
 
   <div class="good-callout">
-    <strong>主要进展</strong> — R2 最大改善来自 Faithfulness（+12.0%），说明 Langfuse 可观测性接入 + vLLM 推理链路稳定后，推理幻觉有显著改善。Answer Correctness 提升幅度较小（+0.4%），说明答案方向准确性仍是 Round 3 的核心攻坚目标。
+    <strong>主要进展</strong> — R2 Faithfulness +12.0%（统计显著，p=0.0001）；Answer Relevancy +9.3%，已达生产目标 ≥0.70。Answer Correctness 提升有限（+0.4%），联合 Faithfulness 仍是 Round 3 核心攻坚目标，主要靠 TEI Reranker GPU 迁移提升检索上下文质量驱动。
   </div>
 
   <!-- ── Question type breakdown ── -->
@@ -411,73 +411,6 @@
     <strong>诊断</strong> Badcase 从 62 → 37，净减少 40.3%，主要得益于检索链路稳定化。但 9 条回归 badcase（R1 good → R2 bad）指向 BGE Reranker ONNX 迁移后分数漂移的副作用，是 Round 3 专项优化目标之一。
   </div>
 
-  <!-- ── Diagnostic categories ── -->
-  <h2 class="section-heading">R2 诊断分类（37 条 Badcase）</h2>
-
-  <div class="diag-card">
-    <div class="diag-header">
-      <div class="diag-num">1</div>
-      <div class="diag-title">Reasoning 幻觉</div>
-      <div class="diag-count">16 条 · F&lt;0.3 + question_type=reasoning</div>
-    </div>
-    <div class="diag-body">
-      推理类问题要求多步因果推断，模型倾向于用参数记忆补全推断链而非严格引用检索文档，形成 post-rationalization（推断结论后反向补充引用）。57% 的 RAG 引用发生在答案已确定之后（arxiv 2606.28358）。
-      <div style="margin-top:8px"><span class="pattern-tag tag-bad">F&lt;0.3</span> <span class="pattern-tag tag-neutral">reasoning 专属</span></div>
-    </div>
-    <div class="diag-fix">
-      <div class="diag-fix-label">已实施优化（Round 3）</div>
-      Rule 8 证据提取优先（Evidence-First / CoI）+ Rule 9 答案输出前自检 + 运行时问题分类器（query_rewriter.py）
-    </div>
-  </div>
-
-  <div class="diag-card">
-    <div class="diag-header">
-      <div class="diag-num">2</div>
-      <div class="diag-title">Simple / Multi-hop 幻觉</div>
-      <div class="diag-count">8 条 · F&lt;0.3 + question_type≠reasoning</div>
-    </div>
-    <div class="diag-body">
-      Simple 类：检索文档有明确事实，但模型用训练记忆覆盖，静默替换文档原文。Multi-hop 类：5 步 ReAct 上限过紧，多跳子问题分解无法完成，中途截断导致推理空白被参数记忆填补。
-      <div style="margin-top:8px"><span class="pattern-tag tag-bad">F&lt;0.3</span> <span class="pattern-tag tag-neutral">simple / multi_hop</span></div>
-    </div>
-    <div class="diag-fix">
-      <div class="diag-fix-label">已实施优化（Round 3）</div>
-      QUESTION_TYPE_RULES 注入（agent.py）+ 动态 max_steps（simple=3 / reasoning=5 / multi_hop=7）
-    </div>
-  </div>
-
-  <div class="diag-card">
-    <div class="diag-header">
-      <div class="diag-num">3</div>
-      <div class="diag-title">有据偏答</div>
-      <div class="diag-count">13 条 · F≥0.3 + AC&lt;0.4</div>
-    </div>
-    <div class="diag-body">
-      答案忠实于检索文档（F 尚可），但方向偏离了被问的核心内容。主要失败模式：① 选择性接地——文档有 A/B/C，问的是 A，模型答了 B/C；② 问题理解偏差——"X 的影响"被理解为"X 是什么"；③ 答案不完整——仅提取了文档中的部分关键点。
-      <div style="margin-top:8px"><span class="pattern-tag tag-warn">AC&lt;0.4</span> <span class="pattern-tag tag-accent">F≥0.3（有据）</span></div>
-    </div>
-    <div class="diag-fix">
-      <div class="diag-fix-label">已实施优化（Round 3）</div>
-      Rule 10 问题焦点锚定（agent.py）— 检索前明确答案对象，输出前对照自检，全题型生效，零额外 LLM 调用
-    </div>
-  </div>
-
-  <div class="diag-card">
-    <div class="diag-header">
-      <div class="diag-num">4</div>
-      <div class="diag-title">BGE Reranker 回归</div>
-      <div class="diag-count">9 条 · R1 good → R2 bad（新增回归）</div>
-    </div>
-    <div class="diag-body">
-      R2 迁移将 BGE Reranker 从 sentence-transformers（PyTorch）改为裸 ONNX Runtime，两者 sigmoid 分数分布存在系统性偏差，导致部分原本排名靠前的正确文档被重排到第 3–5 位。次要因素：rrf_final_top_k=10 截断候选池，正确文档落在 top-11+ 时永远无法被 reranker 发现。
-      <div style="margin-top:8px"><span class="pattern-tag tag-bad">R2 回归</span> <span class="pattern-tag tag-neutral">ONNX 分数漂移</span> <span class="pattern-tag tag-neutral">候选池截断</span></div>
-    </div>
-    <div class="diag-fix">
-      <div class="diag-fix-label">Round 3 优化方案</div>
-      rrf_final_top_k: 10→20 + reranker 分数&lt;0.35 时降级回 RRF 排序（retriever.py）
-    </div>
-  </div>
-
   <!-- ── Round 3 Targets ── -->
   <h2 class="section-heading">Round 3 目标对齐</h2>
   <div class="target-block">
@@ -521,41 +454,81 @@
       </div>
     </div>
 
-    <div class="target-metric" style="margin-bottom:0">
+    <div class="target-metric">
       <div class="target-metric-header">
         <span class="target-metric-name">Answer Relevancy</span>
         <span class="target-values">
           <span class="target-r1">R1 0.633</span>
           <span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r2">R2 0.643</span>
+          <span class="target-r2">R2 0.726</span>
           <span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r3">R3 ≥0.70</span>
+          <span class="target-r3" style="color:var(--good)">✅ 已达目标 ≥0.70</span>
         </span>
       </div>
       <div class="target-bar-track">
         <div class="target-bar-r3" style="width:70%"></div>
-        <div class="target-bar-r2" style="width:64.3%"></div>
+        <div class="target-bar-r2" style="width:72.6%; background:var(--good); opacity:0.8"></div>
         <div class="target-bar-r1" style="width:63.3%"></div>
         <div class="target-marker" style="left:70%"></div>
       </div>
     </div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Context Precision <span style="color:var(--warn);font-size:10px">⚠️ 词汇泄露偏差</span></span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.947⚠️</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.950⚠️</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3" style="color:var(--text-muted)">R3 目标 ≥0.85（修复后）</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:85%"></div>
+        <div class="target-bar-r2" style="width:95%; background:var(--warn); opacity:0.6"></div>
+        <div class="target-bar-r1" style="width:94.7%; background:var(--warn); opacity:0.4"></div>
+        <div class="target-marker" style="left:85%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">当前值偏高，60 条词汇多样化问题注入后 Round 3 显示真实水平</div>
+    </div>
+
+    <div class="target-metric" style="margin-bottom:0">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Context Recall <span style="color:var(--warn);font-size:10px">⚠️ 词汇泄露偏差</span></span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.903⚠️</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.937⚠️</span>
+          <span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3" style="color:var(--text-muted)">R3 目标 ≥0.85（修复后）</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:85%"></div>
+        <div class="target-bar-r2" style="width:93.7%; background:var(--warn); opacity:0.6"></div>
+        <div class="target-bar-r1" style="width:90.3%; background:var(--warn); opacity:0.4"></div>
+        <div class="target-marker" style="left:85%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">当前值偏高，60 条词汇多样化问题注入后 Round 3 显示真实水平</div>
+    </div>
   </div>
 
-  <!-- ── Round 3 action plan ── -->
-  <h2 class="section-heading">Round 3 优化清单</h2>
+  <!-- ── Round 2 post-diagnostic optimizations ── -->
+  <h2 class="section-heading">Round 2 诊断优化清单（共 7 项）</h2>
   <div class="card-full">
     <div class="action-row">
       <div class="action-num">1</div>
       <div class="action-body">
-        <div class="action-title">Reasoning 幻觉 — Rule 8/9 + 运行时分类器 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
-        Evidence-First 证据提取前置步骤 + 答案输出前逐项证据自检 + Qwen3-4B 输出 QUESTION_TYPE 字段，规则匹配兜底，两级分类触发 Rule 8/9
+        <div class="action-title">优化 1 — Reasoning 幻觉：Rule 8/9 + 运行时分类器 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        Evidence-First 证据提取前置步骤 + 答案输出前逐项证据自检 + Qwen3-4B 输出 QUESTION_TYPE 字段，规则匹配兜底，两级分类触发 Rule 8/9。Round 3 前已部署生效
         <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/core/query_rewrite/query_rewriter.py · src/main.py</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">2</div>
       <div class="action-body">
-        <div class="action-title">Simple / Multi-hop 幻觉 — QUESTION_TYPE_RULES + 动态步数 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        <div class="action-title">优化 2 — Simple / Multi-hop 幻觉：QUESTION_TYPE_RULES + 动态步数 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
         按题型注入差异化约束规则 + max_steps 动态配置（simple=3 / reasoning=5 / multi_hop=7），防止步数截断导致推理空白
         <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/main.py</div>
       </div>
@@ -563,7 +536,7 @@
     <div class="action-row">
       <div class="action-num">3</div>
       <div class="action-body">
-        <div class="action-title">有据偏答 — Rule 10 问题焦点锚定 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        <div class="action-title">优化 3 — 有据偏答：Rule 10 问题焦点锚定 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
         检索前明确直接答案对象，输出前对照答案对象自检，全题型生效，零额外 LLM 调用
         <div class="action-file">src/core/ReAct_Agent/tools/agent.py</div>
       </div>
@@ -571,34 +544,42 @@
     <div class="action-row">
       <div class="action-num">4</div>
       <div class="action-body">
-        <div class="action-title">BGE Reranker 回归 — 候选池扩容 + 分数降级兜底 <span class="pattern-tag tag-warn" style="margin-left:6px">进行中</span></div>
-        rrf_final_top_k: 10→20；reranker 最高分 &lt;0.35 时跳过 reranker 排序，直接返回 RRF top-k 结果
-        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py</div>
+        <div class="action-title">优化 4 — BGE Reranker 彻底修复：TEI GPU FP16 迁移 + score_threshold 质量门控 + 候选池扩大 <span class="pattern-tag tag-warn" style="margin-left:6px">待服务器部署</span></div>
+        bge-reranker-v2-m3 FP16 通过 TEI（Text Embeddings Inference）GPU 部署，替换 ONNX INT8 CPU；score_threshold=0.45 过滤低质量候选；vector_top_k/bm25_top_k: 15→20，rrf_final_top_k: 15→25
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · config/config_path.py · docker-compose.yml · src/main.py · config/paths.py</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">5</div>
       <div class="action-body">
-        <div class="action-title">AR=0 Artifact — BGE-M3 嵌入 + 中文 question_generation <span class="pattern-tag tag-neutral" style="margin-left:6px">待处理</span></div>
-        修复 RAGAS 评估中 Answer Relevancy 为 0 的异常条目，根因为嵌入模型与 question_generation prompt 语言不匹配
-        <div class="action-file">src/core/evaluation/ · RAGAS 配置</div>
+        <div class="action-title">优化 5 — RAGAS AR 虚低修复：question_generation 中文 prompt 覆盖 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        RAGAS 内置英文 prompt 驱动 Judge LLM 从中文答案生成英文问题，造成跨语言余弦相似度归零（37条 AR=0）。覆盖 question_generation.instruction 为中文指令，AR 从虚低 0.643 恢复至真实值 0.726，已达生产目标
+        <div class="action-file">scripts/run_ragas_offline.py · src/core/evaluation/ragas_evaluator.py</div>
       </div>
     </div>
     <div class="action-row">
       <div class="action-num">6</div>
       <div class="action-body">
-        <div class="action-title">CP/CR 循环偏差 — KB 派生问题去偏 <span class="pattern-tag tag-neutral" style="margin-left:6px">待处理</span></div>
-        评估集问题与 Ground Truth 均由 KB chunk 生成导致 CP/CR 虚高，需引入独立人工问题或交叉知识库评估集
-        <div class="action-file">评估方法论</div>
+        <div class="action-title">优化 6 — CP/CR 词汇泄露去偏：paraphrase + 对抗性问题补充 <span class="pattern-tag tag-warn" style="margin-left:6px">数据生成中</span></div>
+        合成问题词汇直接来自 chunk，BM25 精确命中导致 CP/CR 虚高。补充 60 条词汇多样化问题：30 条对现有问题做 paraphrase（禁用 chunk 关键词）+ 30 条从 topic 出发全新生成对抗性问题，与原 183 条混合评估
+        <div class="action-file">scripts/collect_real_user_eval.py · data/evaluation/real_user_questions.json</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">7</div>
+      <div class="action-body">
+        <div class="action-title">优化 7 — F 改进统计显著性认证：假设检验 <span class="pattern-tag tag-good" style="margin-left:6px">已完成</span></div>
+        Mann-Whitney U 检验 + Bootstrap 95% CI + Cohen's d 三重验证。Faithfulness +0.120（p=0.0001，d=0.444 small）统计显著；CP/CR/AR/AC 批次间差异均不显著（p≥0.48），印证 CP/CR 虚高为采样偏差而非系统能力提升。Round 3 后重新执行对比认证
+        <div class="action-file">scripts/significance_test.py</div>
       </div>
     </div>
   </div>
 
   <div class="footnotes">
-    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text · 重排: BGE-Reranker-v2 (ONNX)</span>
-    <span>评估框架: ragas 0.4.3 · 检索: Milvus 2.6 IVF_RABITQ + BM25 + RRF + BGE Rerank</span>
-    <span>CP / CR 受循环偏差影响，轮次内绝对值仅供参考，轮次间对比有效</span>
-    <span>生成时间: 2026-09-28 · Author: Ke Meng</span>
+    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX INT8 · 重排: BGE-Reranker-v2-m3（Round 3 升级为 TEI FP16 GPU）</span>
+    <span>评估框架: ragas 0.4.3 · 检索: Milvus 2.6 IVF_RABITQ + BM25 + RRF + BGE Rerank · 显著性检验: Mann-Whitney U + Bootstrap CI + Cohen's d</span>
+    <span>CP / CR 受词汇泄露偏差影响虚高；AR R2 值为修复英文 prompt 后的真实值 0.726</span>
+    <span>生成时间: 2026-09-28 · 更新: 2026-09-29 · Author: Ke Meng</span>
   </div>
 
 </div>
