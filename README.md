@@ -147,6 +147,33 @@ Round 3 目标：5 项 RAGAS 原生指标对标生产上线标准 + 系统能力
   | [DataMorgana / SIGIR LiveRAG (2025)](https://arxiv.org/html/2501.12789v1) | 生产级 RAG评估需要多样化问题类型，覆盖词汇鸿沟场景 |
   | [Synthetic Question Generation for RetrievalEvaluation](https://suzyahyah.github.io/nlp/2024/08/03/Retrieval-Evaluation.html) | LLM生成问题天然继承源文本词汇，导致检索评估偏乐观 |
 
+  #### 7、FF 改进统计显著性未认证，未做假设检验
+  
+  **规模：** Round2 全量 183 条评估数据
+
+  **根因：**
+  每轮 F 分数改进（如 Batch1→Batch2 +0.12）仅凭均值对比，未验证提升是系统优化效果还是批次间采样偏差导致的噪声。
+
+  **优化方案：**
+
+  | 检验方法 | 原理 | 判断标准 |
+  |---------|---------|---------|
+  | Mann-Whitney U 检验 | 核心检验，输出P值，判断两组分布差异是否显著 | p < 0.05 认定显著 |
+  | Bootstrap 95% 置信区间 | 输出每组均值的 95% 置信区间 | 两组 CI 不重叠则显著 |
+  | Cohen's d | 判断提升是否有实际意义（p 显著但 d 极小 = 统计显著但无实用价值） | d ≥0.5 为中等效应，d < 0.2 即便显著也无实际价值 |
+
+  **已有结果（Batch1 vs Batch2）：**
+
+  | 指标 | Batch1 | Batch2 | Δ| p 值 | 结论 |
+  |------|--------|--------|---|------|------|
+  | Faithfulness | 0.490 | 0.610 | +0.12 | 0.0001 | ✅ 显著提升 |
+  | Answer Relevancy | 0.633 | 0.643 | +0.01 | 0.496 | —无显著差异 |
+  | Context Precision | 0.947 | 0.950 | +0.002 | 0.883 | —无显著差异 |
+  | Context Recall | 0.903 | 0.935 | +0.033 | 0.511 | —无显著差异 |
+
+  > Faithfulness 统计显著（p=0.0001），非虚高指标。Round 3 跑完仍有提升空间（上文优化 4、优化 3支撑）。
+
+  > Round 3 沿用，全部优化落地后重新执行检验，以 p < 0.05 + Cohen's d ≥0.5 双重标准认证。
   
 
   
