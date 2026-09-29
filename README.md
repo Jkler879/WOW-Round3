@@ -92,15 +92,25 @@ Round 1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告
   | **预期收益** | Answer Correctness ↑，尤其针对选择性接地和问题理解偏差两类失败模式|
   | **论文引用** | [Before Reasoning Fails](https://arxiv.org/abs/2608.02011)（2026）；[What Would Fix This RAGFailure?](https://arxiv.org/abs/2608.08944)（2026）|
 
-#### 4. Reranker引发回归
+  #### 4. Reranker 引发回归
 
-  **规模：** 相比 Round 1 新增 9 条 badcase
-  
-  **根因：** 
+  **规模：** 相比 Round 1 新增 9 条 badcase（R1 good → R2 bad）
+
+  **根因：**
+  1. ONNX 分数漂移：本地重排模型为 BGE-reranker-v2-m3 int8 量化版本（CPU ONNX部署），Round 2 新增9条 Round 1 未出现 bad case，部分原本排名靠前的正确文档被重排至第 3–5位，跌出 Top-K 截断线
+    
+  3. 候选池过窄：`rrf_final_top_k=10` 截断了 RRF 融合后的候选集，正确文档落在第 11 位以后时，Reranker 永远无法发现
+    
+  4. 量化精度损失：INT8 自量化在边界样本上的评分误差被 Top-K 截断放大，导致召回质量回归
 
   **优化方案：**
-  1、原重排模型为 BGE-rerank-v2-m3 int8自量化版本，现升级为 FP32 原版模型
-  2、重排模型从 CPU 移植至 GPU，由 TEI 框架负责部署，内置 FP 16 量化
+
+  | 维度 | 内容 |
+  |------|------|
+  | **模型升级**  | 从 BGE-reranker-v2-m3 INT8 自量化版本升级为 FP32 原版模型（BGE-reranker-v2-m3），消除量化分数漂移✅ |
+  | **部署迁移**  | 重排器从 CPU ONNX Runtime 迁移至 GPU，由 **TEI v1.6** 框架托管，内置 FP16 精度转换，推理延迟从 1359ms →36.4ms（速度提升37倍）✅ |
+  | **检索候选池扩大** | rrf_final_top_k 从 10 扩大至 25，确保正确文档不被 RRF 阶段提前截断。重排 topK 扩大至10，GPU 测试无压力 ✅|
+  | **检索质量门控**  | Reranker 打分后，低于阈值 0.45（0.3-0.5为模糊区间） 的文档直接丢弃不进入 LLM context；若所有文档均低于阈值则强制保留最高分 1 条兜底，避免 context 为空。高阈值策略优先保障 Faithfulness，牺牲少量召回换取更低幻觉风险 ✅|
 
 #### 5. RAGAS 评估框架内置英文提示词造成 AR 指标虚低 
 
