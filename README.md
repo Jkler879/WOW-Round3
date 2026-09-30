@@ -192,6 +192,42 @@ Round 1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告
   > Faithfulness 统计显著（p=0.0001），非虚高指标。Round 3 跑完仍有提升空间（上文优化 4、优化 3支撑）。
 
   > Round 3 沿用，全部优化落地后重新执行检验，以 p < 0.05 + Cohen's d ≥0.5 双重标准认证。
+
+
+### Round 3 合成数据质量
+
+  **规模：** 30 条同义改写数据（口语化表达 + 关键词避让） + 30 条对抗性验证数据（添加间接指代、俗称替换等）
+
+  **生成模型：** Claude Sonnet 5.5 负责合成数据生成，Claude Opus 5.5 负责质量评估及优化
+
+  **合成逻辑：**
+  - **动机**：Round 1/2 的题目由 LLM 读取 chunk 合成生成，天然沿用原文用词，使 CP/CR结构性虚高。合成数据通过换词和口语化，检验系统在真实问法下的检索能力。
+  
+  - **改写集**：从 Round 2 结果中按 topic 抽取高 30 个Faithfulness 题（F≥0.7，15simple + 15 reasoning），回避 chunk关键词改写为口语化问法，GT 沿用原题，用于逐题配对比较。
+  
+  - **对抗集**：从 Round 2 中分层随机抽取 30 个 gold chunk（15 simple / 12 reasoning / 3 multi_hop，seed=42），按**chunk →GT →Question** 顺序生成：GT 只取自 gold chunk 原文，并逐字校验依据句；问题采用以下四类问法：
+
+  | 问法 | 数量 | 示例 |
+  |------|------|------|
+  | 间接指代 | 12 | 史努比那个品种的狗为啥鼻子那么灵？ |
+  | 俗称替换 | 12 | 四脚蛇、躁郁症、西红柿 |
+  | 前提核查 | 4 | 只陈列了两年的苏格兰威士忌能叫 Scotch 吗？ |
+  | 场景噪声 | 2 | 医生说我有点贫血让我吃补铁的药片……|
+
+  - **质量控制**：两轮审查，修复事实错误、意图漂移、问法反转、答案泄露，以及 5 条继承自 Round 2 的 GT 缺陷。
+
+  **论文引用：**
+  1. Filice et al. *Generating Q&A Benchmarks for RAG Evaluation in Enterprise Settings* (DataMorgana). ACL 2025
+  Industry. [arXiv:2501.12789](https://arxiv.org/abs/2501.12789)：可配置的问题类别，提升词汇与句法多样性
+  2. Zhu et al. *RAGEval: Scenario Specific RAG Evaluation Dataset Generation Framework.* ACL 2025.
+  [arXiv:2408.01262](https://arxiv.org/abs/2408.01262)：抽取原文依据（references），保证答案可追溯
+  3. Sivasothy et al. *RAGProbe: An Automated Approach for Evaluating RAG Applications.*
+  [arXiv:2409.19019](https://arxiv.org/abs/2409.19019)：构造问答变体，定位 RAG 失效点
+
+  
+
+
+
   
 
   
