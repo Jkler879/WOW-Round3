@@ -221,11 +221,11 @@ Round 1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告
   **生成模型：** Claude Sonnet 5.5 负责合成数据生成，Claude Opus 5.5 负责质量评估及优化
 
   **合成逻辑：**
-  - **动机**：Round 1/2 的题目由 LLM 读取 chunk 合成生成，天然沿用原文用词，使 CP/CR结构性虚高。合成数据通过换词和口语化，检验系统在真实问法下的检索能力。
+  - **动机**：Round 1/2 的评估及由 Claude Sonnet 5.5 读取知识库 Top200 合成生成，天然沿用原文用词，使 CP/CR结构性虚高。合成数据通过换词和口语化，检验系统在真实问法下的检索能力。
   
   - **改写集**：从 Round 2 结果中按 topic 抽取 30 个高分 Faithfulness 题（F≥0.7，15simple + 15 reasoning），回避 chunk关键词改写为口语化问法，GT 沿用原题，用于逐题配对比较。
   
-  - **对抗集**：从 Round 2 中分层随机抽取 30 个 gold chunk（15 simple / 12 reasoning / 3 multi_hop，seed=42），按**chunk →GT →Question** 顺序生成：GT 只取自 gold chunk 原文，并逐字校验依据句；问题采用以下四类问法：
+  - **对抗集**：从 Round 2 结果中（去除改写集）分层随机抽取 30 个 gold chunk（15 simple / 12 reasoning / 3 multi_hop，seed=42），按**chunk →GT →Question** 顺序生成：GT 只取自 gold chunk 原文，并逐字校验依据句；问题采用以下四类问法：
 
   | 问法 | 数量 | 示例 |
   |------|------|------|
