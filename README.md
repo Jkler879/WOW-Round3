@@ -126,7 +126,7 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 | 10 | 翻译改变原文语义、专有名词写法不一 | SP添加：中文转述规范 + 专有名词保真 | AC |
 
 <details>
-<summary><b>1. Reasoning 类型问题幻觉 ⬅ （点击可查看详情）</b></summary>
+<summary><b>1. Reasoning 类型问题幻觉 ⬅ （对应以上 10 条，点击可查看详情）</b></summary>
 -
   
 **规模：** 16 条 badcase，占 badcase 总量 43%；Round 2 reasoning 题 F 0.498。
