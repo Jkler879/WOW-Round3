@@ -273,14 +273,6 @@
     <strong>③ 真实 CP / CR</strong> — 245 条综合口径（失败计 0）CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标；仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
   </div>
 
-  <div class="footnotes">
-    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX（与 R1 / R2 一致） · AR 提示词: zh_v2（RAGAS 原生计分逻辑）</span>
-    <span>检索: Milvus 2.6 IVF_RABITQ + BM25（单句）→ 段落级 RRF → BGE-Reranker-v2-m3 TEI FP16 MaxP 重排 → 双阈值分档（τ_high 0.3 / τ_low 0.1）+ Qwen3-4B 充分性判定</span>
-    <span>显著性检验: Wilcoxon 符号秩检验（配对 177 条）· CP / CR 置信区间: bootstrap 5000 次 · Badcase 定义: F&lt;0.3 或 AC&lt;0.4</span>
-    <span>数据来源: ragas_results_batch_3.json（原题 179 条）· ragas_results_batch_51.json（合成 53 条）· trace_r3_syn60.log</span>
-    <span>口径更正: R2 报告中 "AR 0.643 → 0.726" 为剔除 0 分后的估算，R2 实测 AR 为 0.643（旧提示词，AR=0 源于"含糊回避"判定过宽）；Answer Correctness 应为 事实 F1 × 0.75 + 语义相似度 × 0.25（R2 报告误写）</span>
-    <span>生成时间: 2026-10-05 · Author: Ke Meng</span>
-  </div>
   
   <!-- ── R2 vs R3 Comparison ── -->
   <h2 class="section-heading">R2 → R3 全指标对比</h2>
