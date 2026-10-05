@@ -252,6 +252,36 @@
     <strong>原评估集五项指标全部达到生产上线目标</strong> — F > 0.70 / AR > 0.70 / CP > 0.85 / CR > 0.85 / AC > 0.65 均达标。相比 R2，Faithfulness 与 Answer Correctness 均为统计显著提升（Wilcoxon 配对检验 p&lt;10⁻⁴）。
   </div>
 
+    <!-- ── Synthetic data ── -->
+  <h2 class="section-heading">60 条合成数据：真实问法下的检索能力</h2>
+  <div class="card-full">
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">原评估集问题用词与知识库原文高度重合，CP / CR 结构性虚高。为此补充 60 条贴近真实用户的问题：改写集 30 条（原题改为口语化问法、避开原文关键词）与对抗集 30 条（间接指代、俗称替换、前提核查、场景噪声）。</div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>集合</th><th>gold 命中</th><th>失败（拒答 / 跳过检索）</th><th>CP*</th><th>CR*</th><th>F</th><th>AC</th></tr></thead>
+        <tbody>
+          <tr><td><span class="cell-label">改写集</span></td><td>27 / 30</td><td>3</td><td><span class="score-num good">0.888</span></td><td><span class="score-num good">0.900</span></td><td>0.768</td><td>0.694</td></tr>
+          <tr><td><span class="cell-label">对抗集</span></td><td>25 / 30</td><td>4</td><td><span class="score-num warn">0.833</span></td><td><span class="score-num warn">0.833</span></td><td>0.664</td><td>0.680</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--text-faint);margin-top:8px">* CP / CR 失败按 0 分计入（全部 30 条）；F / AC 为 RAGAS 原始口径（有检索上下文的题）。</div>
+  </div>
+  <div class="warn-callout">
+    <strong>① 原题虚高约 0.12</strong> — 同一题换成口语问法（配对 25 条），CP 0.993 → 0.866、CR 1.000 → 0.880，量化了原评估集的词汇泄露偏差。<br>
+    <strong>② 失败根因是查询改写，不是阈值</strong> — 6 条误拒全部是改写器把俗称或口语翻错（如"越野滑雪"→ off-road skiing、"小号"→ small horns），检索分数降到 0.1 量级后被拒答线拦下；其中 4 条 gold 段落仍排在前 3 名。修复：拒答前用原始问题让 4B 二次判定 + 改写器翻译优化。<br>
+    <strong>③ 真实 CP / CR</strong> — 245 条综合口径（失败计 0）CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标；仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
+  </div>
+
+  <div class="footnotes">
+    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX（与 R1 / R2 一致） · AR 提示词: zh_v2（RAGAS 原生计分逻辑）</span>
+    <span>检索: Milvus 2.6 IVF_RABITQ + BM25（单句）→ 段落级 RRF → BGE-Reranker-v2-m3 TEI FP16 MaxP 重排 → 双阈值分档（τ_high 0.3 / τ_low 0.1）+ Qwen3-4B 充分性判定</span>
+    <span>显著性检验: Wilcoxon 符号秩检验（配对 177 条）· CP / CR 置信区间: bootstrap 5000 次 · Badcase 定义: F&lt;0.3 或 AC&lt;0.4</span>
+    <span>数据来源: ragas_results_batch_3.json（原题 179 条）· ragas_results_batch_51.json（合成 53 条）· trace_r3_syn60.log</span>
+    <span>口径更正: R2 报告中 "AR 0.643 → 0.726" 为剔除 0 分后的估算，R2 实测 AR 为 0.643（旧提示词，AR=0 源于"含糊回避"判定过宽）；Answer Correctness 应为 事实 F1 × 0.75 + 语义相似度 × 0.25（R2 报告误写）</span>
+    <span>生成时间: 2026-10-05 · Author: Ke Meng</span>
+  </div>
+  
   <!-- ── R2 vs R3 Comparison ── -->
   <h2 class="section-heading">R2 → R3 全指标对比</h2>
   <div class="card-full">
@@ -439,36 +469,6 @@
   </div>
   <div class="insight">
     <strong>诊断</strong> R3 的 27 条 badcase 中 reasoning 占 19 条（70%）。典型模式：① 文档写了相关事实，模型仍回答"知识库现有资料未说明原因"；② 在原因陈述后追加推测或内置知识（举例、背景补充）；③ 多跳题只检索一次，后半部分缺乏依据。14 条回归集中在 reasoning 与 multi_hop，与"返回块数减少后，模型更倾向用内置知识补全"一致。
-  </div>
-
-  <!-- ── Synthetic data ── -->
-  <h2 class="section-heading">60 条合成数据：真实问法下的检索能力</h2>
-  <div class="card-full">
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">原评估集问题用词与知识库原文高度重合，CP / CR 结构性虚高。为此补充 60 条贴近真实用户的问题：改写集 30 条（原题改为口语化问法、避开原文关键词）与对抗集 30 条（间接指代、俗称替换、前提核查、场景噪声）。</div>
-    <div class="data-table-wrap">
-      <table class="data-table">
-        <thead><tr><th>集合</th><th>gold 命中</th><th>失败（拒答 / 跳过检索）</th><th>CP*</th><th>CR*</th><th>F</th><th>AC</th></tr></thead>
-        <tbody>
-          <tr><td><span class="cell-label">改写集</span></td><td>27 / 30</td><td>3</td><td><span class="score-num good">0.888</span></td><td><span class="score-num good">0.900</span></td><td>0.768</td><td>0.694</td></tr>
-          <tr><td><span class="cell-label">对抗集</span></td><td>25 / 30</td><td>4</td><td><span class="score-num warn">0.833</span></td><td><span class="score-num warn">0.833</span></td><td>0.664</td><td>0.680</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div style="font-size:10px;color:var(--text-faint);margin-top:8px">* CP / CR 失败按 0 分计入（全部 30 条）；F / AC 为 RAGAS 原始口径（有检索上下文的题）。</div>
-  </div>
-  <div class="warn-callout">
-    <strong>① 原题虚高约 0.12</strong> — 同一题换成口语问法（配对 25 条），CP 0.993 → 0.866、CR 1.000 → 0.880，量化了原评估集的词汇泄露偏差。<br>
-    <strong>② 失败根因是查询改写，不是阈值</strong> — 6 条误拒全部是改写器把俗称或口语翻错（如"越野滑雪"→ off-road skiing、"小号"→ small horns），检索分数降到 0.1 量级后被拒答线拦下；其中 4 条 gold 段落仍排在前 3 名。修复：拒答前用原始问题让 4B 二次判定 + 改写器翻译优化。<br>
-    <strong>③ 真实 CP / CR</strong> — 245 条综合口径（失败计 0）CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标；仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
-  </div>
-
-  <div class="footnotes">
-    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX（与 R1 / R2 一致） · AR 提示词: zh_v2（RAGAS 原生计分逻辑）</span>
-    <span>检索: Milvus 2.6 IVF_RABITQ + BM25（单句）→ 段落级 RRF → BGE-Reranker-v2-m3 TEI FP16 MaxP 重排 → 双阈值分档（τ_high 0.3 / τ_low 0.1）+ Qwen3-4B 充分性判定</span>
-    <span>显著性检验: Wilcoxon 符号秩检验（配对 177 条）· CP / CR 置信区间: bootstrap 5000 次 · Badcase 定义: F&lt;0.3 或 AC&lt;0.4</span>
-    <span>数据来源: ragas_results_batch_3.json（原题 179 条）· ragas_results_batch_51.json（合成 53 条）· trace_r3_syn60.log</span>
-    <span>口径更正: R2 报告中 "AR 0.643 → 0.726" 为剔除 0 分后的估算，R2 实测 AR 为 0.643（旧提示词，AR=0 源于"含糊回避"判定过宽）；Answer Correctness 应为 事实 F1 × 0.75 + 语义相似度 × 0.25（R2 报告误写）</span>
-    <span>生成时间: 2026-10-05 · Author: Ke Meng</span>
   </div>
 
 </div>
