@@ -12,7 +12,7 @@
 
 [Round 3 Evaluation Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round3_evaluation_report.html)
 
-[Round 2 Diagnostic Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOWRound3/blob/main/round2_diagnostic_report.html) 
+[Round 2 Diagnostic Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round2_diagnostic_report.html) 
 
 [Round 1 Baseline Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round1_baseline_report.html)
 
