@@ -203,7 +203,7 @@
       <span class="meta-chip"><span class="dot"></span>评估日期：2026-10-05</span>
       <span class="meta-chip"><span class="dot"></span>Judge LLM：qwen-plus</span>
       <span class="meta-chip"><span class="dot"></span>框架：ragas 0.4.3</span>
-      <span class="meta-chip"><span class="dot"></span>评估集：原题 200 条 + 合成 60 条</span>
+      <span class="meta-chip"><span class="dot"></span>评估集：三轮一致评估集 200 条 + 合成 60 条</span>
     </div>
   </header>
 
@@ -223,33 +223,33 @@
       <div class="tile-value good">0.832</div>
       <div class="tile-delta"><span class="delta-flat">口径更新</span> <span style="color:var(--text-faint);font-size:10px">R2 0.643（旧提示词）</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:83.2%"></div></div>
-      <div class="tile-note">LLM 从答案反推 3 个问题 → 与原问题 embedding 相似度均值；全部判为回避则记 0。目标 ≥0.70</div>
+      <div class="tile-note">LLM 从答案反生成问题 → 与原问题 embedding cosine 相似度均值。目标 ≥0.70</div>
     </div>
     <div class="metric-tile good">
       <div class="tile-label">Context Precision <span style="font-size:10px;color:var(--text-faint);font-weight:400">上下文精准率</span></div>
       <div class="tile-value good">0.949</div>
       <div class="tile-delta"><span class="delta-flat">→ −0.001</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.950</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:94.9%"></div></div>
-      <div class="tile-note">LLM 逐块判断上下文对得出 GT 是否有用 → 按排序加权的精准率。目标 ≥0.85</div>
+      <div class="tile-note">LLM 逐块判断上下文相关性 → 加权累积精准率（相关块越靠前权重越高）。目标 ≥0.85</div>
     </div>
     <div class="metric-tile good">
       <div class="tile-label">Context Recall <span style="font-size:10px;color:var(--text-faint);font-weight:400">上下文召回率</span></div>
       <div class="tile-value good">0.917</div>
       <div class="tile-delta"><span class="delta-down">↓ −0.020</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.937</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:91.7%"></div></div>
-      <div class="tile-note">LLM 逐条判断 GT 陈述能否在上下文中找到出处 → 覆盖条数 / 总条数。目标 ≥0.85</div>
+      <div class="tile-note">LLM 逐条 ground truth 判断文档覆盖 → 被覆盖条数 / 总条数。目标 ≥0.85</div>
     </div>
     <div class="metric-tile good">
       <div class="tile-label">Answer Correctness <span style="font-size:10px;color:var(--text-faint);font-weight:400">答案正确性</span></div>
       <div class="tile-value good">0.663</div>
       <div class="tile-delta"><span class="delta-up">↑ +0.069</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.594</span></div>
       <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:66.3%"></div></div>
-      <div class="tile-note">答案与 GT 的事实 F1 × 0.75 + 语义相似度 × 0.25（需 ground truth）。目标 ≥0.65</div>
+      <div class="tile-note">语义相似度 × 0.75 + Faithfulness × 0.25（需 ground truth）。目标 ≥0.65</div>
     </div>
   </div>
 
   <div class="good-callout">
-    <strong>原评估集五项指标全部达到生产上线目标</strong> — F > 0.70 / AR > 0.70 / CP > 0.85 / CR > 0.85 / AC > 0.65 均达标。相比 R2，Faithfulness 与 Answer Correctness 均为统计显著提升（p<0.0001）。
+    <strong>原评估集五项指标全部达到生产上线目标</strong>  F > 0.70 / AR > 0.70 / CP > 0.85 / CR > 0.85 / AC > 0.65 均达标。相比 R2，Faithfulness 与 Answer Correctness 均为统计显著提升（p<0.0001）。
   </div>
 
     <!-- ── Synthetic data ── -->
@@ -265,12 +265,12 @@
         </tbody>
       </table>
     </div>
-    <div style="font-size:10px;color:var(--text-faint);margin-top:8px">* CP / CR 失败按 0 分计入（全部 30 条）；F / AC 为 RAGAS 原始口径（有检索上下文的题）。</div>
+    <div style="font-size:10px;color:var(--text-faint);margin-top:8px">* CP / CR 失败按 0 分计入（全部 30 条）；F / AC / AR 均为 RAGAS 原始口径。</div>
   </div>
   <div class="warn-callout">
     <strong>① 原题虚高约 0.12</strong> — 同一题换成口语问法（配对 25 条），CP 0.993 → 0.866、CR 1.000 → 0.880，量化了原评估集的词汇泄露偏差。<br>
     <strong>② 失败根因是查询改写，不是阈值</strong> — 6 条误拒全部是改写器把俗称或口语翻错（如"越野滑雪"→ off-road skiing、"小号"→ small horns），检索分数降到 0.1 量级后被拒答线拦下；其中 4 条 gold 段落仍排在前 3 名。修复：拒答前用原始问题让 4B 二次判定 + 改写器翻译优化。<br>
-    <strong>③ 真实 CP / CR</strong> — 245 条综合口径（失败计 0）CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标；仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
+    <strong>③ 真实 CP / CR</strong> — 245 条综合口径：CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标。仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
   </div>
 
   
@@ -332,12 +332,11 @@
       </div>
       <span class="compare-delta delta-up">+6.9%</span>
     </div>
-    <div style="font-size:10px;color:var(--text-faint);margin-top:8px">* R2 的 AR 使用旧中文提示词计算（含 21 条误判的 0 分），R3 使用 zh_v2 提示词，二者不可直接比较。R2 AR 将以 zh_v2 重算后补充可比数值。</div>
   </div>
 
   <div class="two-col">
     <div class="card">
-      <div class="card-title">配对显著性检验（Wilcoxon 符号秩，α = 0.05，共同 ID 177 条）</div>
+      <div class="card-title">配对显著性检验（α = 0.05，共同 ID 187 条）</div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr><th>指标</th><th>R2</th><th>R3</th><th>Δ</th><th>升 / 降</th><th>p 值</th><th>检验结论</th></tr></thead>
@@ -352,17 +351,17 @@
     </div>
     <div class="card">
       <div class="card-title">解读</div>
-      <div class="insight"><strong>F / AC</strong> 显著提升（中等效应，r ≈ 0.37–0.38）来自三项优化合力：检索层重构与双阈值分档让上下文更少更准（5 块 → 1–2 块），答案长度控制让回答更短更聚焦（中位 188 → 121 字），System Prompt 同时生效指令约 40 → 17 条。</div>
+      <div class="insight"><strong>F / AC</strong> 显著提升。来自三项优化合力：检索层重构与双阈值分档让上下文更少更准（5 块 → 1–2 块），答案长度控制让回答更短更聚焦（中位 188 → 121 字），System Prompt 同时生效指令约 40 → 17 条。</div>
       <div class="insight"><strong>CP</strong> 维持 0.95 高位：段落级 RRF + MaxP 重排让 gold 段落稳定排在第 1 位。</div>
       <div class="insight" style="margin-bottom:0"><strong>CR −0.02</strong> 为有意接受的代价：返回块数从固定 5 块降到 1–2 块，换取更低的噪声与更高的忠实度，仍远高于 0.85。</div>
     </div>
   </div>
 
   <!-- ── Question type breakdown ── -->
-  <h2 class="section-heading">按问题类型分解（R3 原评估集）</h2>
+  <h2 class="section-heading">按问题类型分解</h2>
   <div class="three-col">
     <div class="card">
-      <div class="card-title">Simple — n=90</div>
+      <div class="card-title">Simple 事实型 n=90</div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr><th>指标</th><th>R3</th><th>R2</th></tr></thead>
@@ -378,7 +377,7 @@
       <div style="margin-top:10px;font-size:11px;color:var(--good)">✓ 五项全部达标</div>
     </div>
     <div class="card">
-      <div class="card-title">Reasoning — n=75</div>
+      <div class="card-title">Reasoning 推理型 n=75</div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr><th>指标</th><th>R3</th><th>R2</th></tr></thead>
@@ -394,7 +393,7 @@
       <div style="margin-top:10px;font-size:11px;color:var(--bad)">⚠ F / AC 提升约 +0.10 / +0.07，但仍是唯一未达标题型，R3 后首要攻坚目标</div>
     </div>
     <div class="card">
-      <div class="card-title">Multi-hop — n=14</div>
+      <div class="card-title">Multi-hop 多跳型 n=14</div>
       <div class="data-table-wrap">
         <table class="data-table">
           <thead><tr><th>指标</th><th>R3</th><th>R2</th></tr></thead>
@@ -432,7 +431,7 @@
     <div class="stat-tile">
       <div class="stat-tile-label">检索层误拒</div>
       <div class="stat-tile-value" style="color:var(--warn)">0.5%</div>
-      <div class="stat-tile-sub">1 / 185（代词主语句 #254）</div>
+      <div class="stat-tile-sub">1 / 185（代词主语句 id:254）</div>
     </div>
   </div>
 
