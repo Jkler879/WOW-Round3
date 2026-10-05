@@ -83,7 +83,6 @@
 | 前提核查 | 4 | 只陈酿了两年的苏格兰威士忌能叫 Scotch 吗？ |
 | 场景噪声 | 2 | 医生说我有点贫血让我吃补铁的药片…… |
 
-- **质量控制：** 两轮审查，修复事实错误、意图漂移、问法反转、答案泄露，以及 5 条继承自 Round 2 的 GT 缺陷。
 
 **参考文献：**
 1. Filice et al. *Generating Q&A Benchmarks for RAG Evaluation in Enterprise Settings* (DataMorgana). ACL 2025 Industry. [arXiv:2501.12789](https://arxiv.org/abs/2501.12789)：可配置的问题类别，提升词汇与句法多样性。
