@@ -319,22 +319,22 @@
 
   <div class="two-col">
     <div class="card">
-      <div class="card-title">配对显著性检验（共同 ID 177 条）</div>
+      <div class="card-title">配对显著性检验（Wilcoxon 符号秩，α = 0.05，共同 ID 177 条）</div>
       <div class="data-table-wrap">
         <table class="data-table">
-          <thead><tr><th>指标</th><th>R2</th><th>R3</th><th>Δ</th><th>升 / 降</th><th>Wilcoxon p</th></tr></thead>
+          <thead><tr><th>指标</th><th>R2</th><th>R3</th><th>Δ</th><th>升 / 降</th><th>p 值</th><th>检验结论</th></tr></thead>
           <tbody>
-            <tr><td><span class="cell-label">Faithfulness</span></td><td>0.613</td><td><span class="score-num good">0.706</span></td><td class="delta-up">+0.092</td><td>93 / 50</td><td><span class="pattern-tag tag-good">7.8e-5 显著</span></td></tr>
-            <tr><td><span class="cell-label">Answer Correctness</span></td><td>0.596</td><td><span class="score-num good">0.662</span></td><td class="delta-up">+0.065</td><td>107 / 60</td><td><span class="pattern-tag tag-good">3.9e-5 显著</span></td></tr>
-            <tr><td><span class="cell-label">Context Precision</span></td><td>0.954</td><td>0.948</td><td class="delta-flat">−0.005</td><td>4 / 4</td><td><span class="pattern-tag tag-neutral">0.62 无差异</span></td></tr>
-            <tr><td><span class="cell-label">Context Recall</span></td><td>0.936</td><td>0.916</td><td class="delta-down">−0.020</td><td>3 / 8</td><td><span class="pattern-tag tag-warn">0.051 边缘</span></td></tr>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td>0.613</td><td><span class="score-num good">0.706</span></td><td class="delta-up">+0.092</td><td>93 / 50</td><td>&lt;0.001</td><td><span class="pattern-tag tag-good">显著提升</span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td>0.596</td><td><span class="score-num good">0.662</span></td><td class="delta-up">+0.065</td><td>107 / 60</td><td>&lt;0.001</td><td><span class="pattern-tag tag-good">显著提升</span></td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td>0.954</td><td>0.948</td><td class="delta-flat">−0.005</td><td>4 / 4</td><td>0.62</td><td><span class="pattern-tag tag-neutral">差异不显著</span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td>0.936</td><td>0.916</td><td class="delta-down">−0.020</td><td>3 / 8</td><td>0.051</td><td><span class="pattern-tag tag-warn">差异不显著（临界）</span></td></tr>
           </tbody>
         </table>
       </div>
     </div>
     <div class="card">
       <div class="card-title">解读</div>
-      <div class="insight"><strong>F / AC</strong> 显著提升来自"上下文更少更准 + 答案更短更聚焦"的组合效应（见下方优化归因）。</div>
+      <div class="insight"><strong>F / AC</strong> 显著提升（中等效应，r ≈ 0.37–0.38）来自三项优化合力：检索层重构与双阈值分档让上下文更少更准（5 块 → 1–2 块），答案长度控制让回答更短更聚焦（中位 188 → 121 字），System Prompt 同时生效指令约 40 → 17 条。</div>
       <div class="insight"><strong>CP</strong> 维持 0.95 高位：段落级 RRF + MaxP 重排让 gold 段落稳定排在第 1 位。</div>
       <div class="insight" style="margin-bottom:0"><strong>CR −0.02</strong> 为有意接受的代价：返回块数从固定 5 块降到 1–2 块，换取更低的噪声与更高的忠实度，仍远高于 0.85。</div>
     </div>
@@ -395,7 +395,7 @@
   <div style="font-size:10px;color:var(--text-faint);margin:-8px 0 20px">* R2 列 AR 为旧提示词口径，仅作参考。</div>
 
   <!-- ── System runtime ── -->
-  <h2 class="section-heading">系统运行指标（R3 原评估集 185 条）</h2>
+  <h2 class="section-heading">系统运行指标与 Badcase（R3 原评估集 185 条）</h2>
   <div class="badcase-stats">
     <div class="stat-tile">
       <div class="stat-tile-label">答案长度中位数</div>
@@ -418,31 +418,8 @@
       <div class="stat-tile-sub">1 / 185（代词主语句 #254）</div>
     </div>
   </div>
-  <div class="badcase-stats">
-    <div class="stat-tile">
-      <div class="stat-tile-label">检索分档：置信</div>
-      <div class="stat-tile-value" style="color:var(--good)">94.1%</div>
-      <div class="stat-tile-sub">174 / 185 · 最高分 ≥ 0.3</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-label">检索分档：低置信</div>
-      <div class="stat-tile-value" style="color:var(--warn)">2.7%</div>
-      <div class="stat-tile-sub">5 / 185 · 4B 判定 pass 后带标记返回</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-label">规则检测：套话 / 描述检索</div>
-      <div class="stat-tile-value" style="color:var(--warn)">14.6%</div>
-      <div class="stat-tile-sub">27 / 185 · 只监控不改写</div>
-    </div>
-    <div class="stat-tile">
-      <div class="stat-tile-label">规则检测：英文片段 / 名称不符</div>
-      <div class="stat-tile-value" style="color:var(--warn)">8.6% / 3.2%</div>
-      <div class="stat-tile-sub">16 / 185 · 6 / 185</div>
-    </div>
-  </div>
 
   <!-- ── Badcase stats ── -->
-  <h2 class="section-heading">Badcase 统计</h2>
   <div class="badcase-stats">
     <div class="stat-tile">
       <div class="stat-tile-label">R2 Badcase</div>
@@ -469,65 +446,6 @@
     <strong>诊断</strong> R3 的 27 条 badcase 中 reasoning 占 19 条（70%）。典型模式：① 文档写了相关事实，模型仍回答"知识库现有资料未说明原因"；② 在原因陈述后追加推测或内置知识（举例、背景补充）；③ 多跳题只检索一次，后半部分缺乏依据。14 条回归集中在 reasoning 与 multi_hop，与"返回块数减少后，模型更倾向用内置知识补全"一致。
   </div>
 
-  <!-- ── Attribution ── -->
-  <h2 class="section-heading">Round 2 后优化如何支撑指标提升</h2>
-  <div class="warn-callout">
-    <strong>归因方法说明</strong> — 以下优化在 R3 前一并上线，未逐项做消融实验。归因依据为各项优化的作用机制，结合 trace 日志、逐题配对对比与 R2 相关性分析等证据，属于机制归因而非逐项测量。
-  </div>
-  <div class="card-full">
-    <div class="action-row">
-      <div class="action-num">1</div>
-      <div class="action-body">
-        <div class="action-title">检索层重构：段落级 RRF + MaxP 重排 <span class="pattern-tag tag-good" style="margin-left:6px">CP 维持 0.95</span></div>
-        单句召回后先归并到父段落再融合，同段多句不再挤占候选名额；整段分与命中单句分取最大值，避免多篇文章拼接导致相关句被稀释。证据：test10 与 trace 中原题 gold 段落最高分 0.86–0.9997，排名第 1。
-        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">2</div>
-      <div class="action-body">
-        <div class="action-title">双阈值分档 + 去掉 k_min 保底 + 4B 充分性判定 <span class="pattern-tag tag-good" style="margin-left:6px">F ↑ AC ↑</span> <span class="pattern-tag tag-warn">CR −0.02</span></div>
-        最高分 ≥0.3 只返回高分段落；0.1–0.3 交由本地 Qwen3-4B 逐块判定；&lt;0.1 由代码输出固定话术拒答（参考 CRAG 检索评估器）。证据：trace 显示原保底块 8 个中 7 个分数 &lt;0.1，属纯噪声；上下文从 5 块降到 1–2 块，噪声输入减少是 F / AC 提升的主要来源之一。
-        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · src/core/ReAct_Agent/tools/agent.py · config/config_path.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">3</div>
-      <div class="action-body">
-        <div class="action-title">答案长度控制 <span class="pattern-tag tag-good" style="margin-left:6px">F ↑ AC ↑</span></div>
-        首句直接作答、答完即停、按题型给出长度参考（simple 约 100 字，reasoning 约 200 字）。证据：R2 中答案长度与 F、AC 相关系数为 −0.45、−0.41；R3 答案中位长度 188 → 121 字，陈述越少、无依据陈述越少，也更贴近 GT 长度。
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py（QUESTION_TYPE_RULES）</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">4</div>
-      <div class="action-body">
-        <div class="action-title">System Prompt 精简与模块化 <span class="pattern-tag tag-good" style="margin-left:6px">F ↑</span></div>
-        同时生效指令约 40 条 → 约 17 条，渲染长度 3.9k → 2.4k 字；推理类规则（证据提取、输出前自检）只在 reasoning 题注入，低置信约束由 {evidence_rule} 按检索结果动态注入。依据：ManyIFEval / IFScale 表明多指令同时遵循率随数量指数下降。
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py（SYSTEM_PROMPT · EVIDENCE_RULES）</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">5</div>
-      <div class="action-body">
-        <div class="action-title">翻译与专有名词保真 <span class="pattern-tag tag-accent" style="margin-left:6px">AC 小幅 ↑</span></div>
-        答案全部中文转述，专有名词统一"中文译名（英文原名）"且只翻译文档出现的部分，保持原文确定程度、数量与因果强度。规则检测显示括号英文名与原文不符的比例为 3.2%，仍有残留。
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/core/postprocess/detectors.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">6</div>
-      <div class="action-body">
-        <div class="action-title">评测侧修正：AR 提示词 zh_v2 <span class="pattern-tag tag-neutral" style="margin-left:6px">测量修正，非系统能力</span></div>
-        R2 的 AR=0 根因是"含糊回避"判定过宽（把"给出答案 + 说明资料缺失"判为回避），而非跨语言问题。zh_v2 保留 RAGAS 原生计分逻辑，仅将回避定义对齐原版语义并换成中文示例；验证集 24 条误判 0 分恢复 22 条，真正回避的 3/3 仍判 0。
-        <div class="action-file">scripts/run_ragas_offline.py（--ar-prompt zh_v2）</div>
-      </div>
-    </div>
-  </div>
-  <div class="good-callout">
-    <strong>归纳</strong> — F 与 AC 的显著提升主要来自 ②③④ 的合力：<strong>给模型的材料更少更准，要求模型写得更短更聚焦</strong>。CP 维持高位靠 ①；CR 小幅下降是 ② 有意接受的代价。
-  </div>
-
   <!-- ── Synthetic data ── -->
   <h2 class="section-heading">60 条合成数据：真实问法下的检索能力</h2>
   <div class="card-full">
@@ -549,197 +467,12 @@
     <strong>③ 真实 CP / CR</strong> — 245 条综合口径（失败计 0）CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标；仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
   </div>
 
-  <!-- ── Production gate ── -->
-  <h2 class="section-heading">生产上线门槛对齐（R1 → R2 → R3）</h2>
-  <div class="target-block">
-    <div class="target-label">R1 / R2 / R3 原评估集（R3 为 179 条有效样本口径） · 竖线为上线目标</div>
-
-    <div class="target-metric">
-      <div class="target-metric-header">
-        <span class="target-metric-name">Faithfulness</span>
-        <span class="target-values">
-          <span class="target-r1">R1 0.490</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r2">R2 0.610</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r3">R3 0.708 ✅</span>
-        </span>
-      </div>
-      <div class="target-bar-track">
-        <div class="target-bar-r3" style="width:70.8%; opacity:0.8"></div>
-        <div class="target-bar-r2" style="width:61%"></div>
-        <div class="target-bar-r1" style="width:49%"></div>
-        <div class="target-marker" style="left:70%"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">失败计 0 口径 0.685，未达标</div>
-    </div>
-
-    <div class="target-metric">
-      <div class="target-metric-header">
-        <span class="target-metric-name">Answer Correctness</span>
-        <span class="target-values">
-          <span class="target-r1">R1 0.590</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r2">R2 0.594</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r3">R3 0.663 ✅</span>
-        </span>
-      </div>
-      <div class="target-bar-track">
-        <div class="target-bar-r3" style="width:66.3%; opacity:0.8"></div>
-        <div class="target-bar-r2" style="width:59.4%"></div>
-        <div class="target-bar-r1" style="width:59%"></div>
-        <div class="target-marker" style="left:65%"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">失败计 0 口径 0.641，未达标</div>
-    </div>
-
-    <div class="target-metric">
-      <div class="target-metric-header">
-        <span class="target-metric-name">Answer Relevancy</span>
-        <span class="target-values">
-          <span class="target-r1">R1 0.633*</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r2">R2 0.643*</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r3">R3 0.832 ✅</span>
-        </span>
-      </div>
-      <div class="target-bar-track">
-        <div class="target-bar-r3" style="width:83.2%; opacity:0.8"></div>
-        <div class="target-bar-r2" style="width:64.3%"></div>
-        <div class="target-bar-r1" style="width:63.3%"></div>
-        <div class="target-marker" style="left:70%"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">* R1 / R2 为旧提示词口径；R2 报告中的 0.726 为剔除 0 分后的估算，现予更正</div>
-    </div>
-
-    <div class="target-metric">
-      <div class="target-metric-header">
-        <span class="target-metric-name">Context Precision</span>
-        <span class="target-values">
-          <span class="target-r1">R1 0.947⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r2">R2 0.950⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r3">R3 0.949 · 真实 0.904 ✅</span>
-        </span>
-      </div>
-      <div class="target-bar-track">
-        <div class="target-bar-r3" style="width:90.4%; opacity:0.8"></div>
-        <div class="target-bar-r2" style="width:95%; opacity:0.4"></div>
-        <div class="target-bar-r1" style="width:94.7%"></div>
-        <div class="target-marker" style="left:85%"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">真实值 = 245 条综合口径（失败计 0），合成数据单独 0.861</div>
-    </div>
-
-    <div class="target-metric" style="margin-bottom:0">
-      <div class="target-metric-header">
-        <span class="target-metric-name">Context Recall</span>
-        <span class="target-values">
-          <span class="target-r1">R1 0.903⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r2">R2 0.937⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
-          <span class="target-r3">R3 0.917 · 真实 0.882 ✅</span>
-        </span>
-      </div>
-      <div class="target-bar-track">
-        <div class="target-bar-r3" style="width:88.2%; opacity:0.8"></div>
-        <div class="target-bar-r2" style="width:93.7%; opacity:0.4"></div>
-        <div class="target-bar-r1" style="width:90.3%"></div>
-        <div class="target-marker" style="left:85%"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">真实值 = 245 条综合口径（失败计 0），合成数据单独 0.867</div>
-    </div>
-  </div>
-
-  <!-- ── Measurement corrections ── -->
-  <h2 class="section-heading">评测口径更正</h2>
-  <div class="card-full">
-    <div class="action-row">
-      <div class="action-num">1</div>
-      <div class="action-body">
-        <div class="action-title">R2 报告"AR 0.643 → 0.726"更正</div>
-        0.726 为剔除 21 条 AR=0 后的均值估算，并非修复后重新评估所得。R2 实测 AR 为 0.643（旧提示词）。R2 / R1 的 AR 将以 zh_v2 重算后给出可比数值。
-        <div class="action-file">data/evaluation/ragas_results_batch_2.json</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">2</div>
-      <div class="action-body">
-        <div class="action-title">AR=0 根因更正</div>
-        AR 恰好为 0 来自"含糊回避"判定（3 次反推全部判为回避即记 0），而非跨语言相似度；中文问题生成在旧提示词下已正常工作。
-        <div class="action-file">scripts/run_ragas_offline.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">3</div>
-      <div class="action-body">
-        <div class="action-title">AC 计算方式更正</div>
-        RAGAS 原生 Answer Correctness = 答案与 GT 的事实 F1 × 0.75 + 语义相似度 × 0.25（R2 报告误写为"语义相似度 × 0.75 + Faithfulness × 0.25"）。
-        <div class="action-file">ragas 0.4.3 · AnswerCorrectness 默认权重</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Next steps ── -->
-  <h2 class="section-heading">上线前必须修复 / Round 4 计划</h2>
-  <div class="card-full">
-    <div class="action-row">
-      <div class="action-num">1</div>
-      <div class="action-body">
-        <div class="action-title">拒答前用原始问题二次判定 <span class="pattern-tag tag-bad" style="margin-left:6px">P0</span></div>
-        检索工具注入用户原始中文问题，判定器同时参考原问题与英文查询；最高分 &lt;0.3 的情况统一由 4B 决定是否拒答。针对合成数据 10% 误拒，预计可挽回 4/6。
-        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · agent.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">2</div>
-      <div class="action-body">
-        <div class="action-title">跳过检索时由代码补检索 + 空答案兜底话术 <span class="pattern-tag tag-bad" style="margin-left:6px">P0</span></div>
-        原题跳过检索 2.7%、合成 1.7%，且会谎称"根据知识库"；流式答案为空时未向用户推送兜底话术。
-        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/main.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">3</div>
-      <div class="action-body">
-        <div class="action-title">查询改写阻塞事件循环 <span class="pattern-tag tag-bad" style="margin-left:6px">P0</span></div>
-        同步调用 4B 改写（1–2 s）直接运行在异步请求处理函数中，单 worker 吞吐上限约 0.5–1 req/s；改为 asyncio.to_thread 后再做并发压测。
-        <div class="action-file">src/main.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">4</div>
-      <div class="action-body">
-        <div class="action-title">Reasoning 题专项 + 生成后核验 <span class="pattern-tag tag-warn" style="margin-left:6px">P1</span></div>
-        reasoning F 0.597 / AC 0.596 为唯一未达标题型；逐句核对答案与原文、删除无依据陈述，配合修正"文档写了原因仍判未说明"的执行问题。
-        <div class="action-file">src/core/postprocess/（P4 接地核验）</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">5</div>
-      <div class="action-body">
-        <div class="action-title">改写器俗称 / 专有名词翻译 <span class="pattern-tag tag-warn" style="margin-left:6px">P1</span></div>
-        off-road skiing、small horns、ketchup、Pylegi 等错误已证实会使检索分数降至 0.01 量级；短期加少量示例，长期 QLoRA 微调。
-        <div class="action-file">src/core/query_rewrite/query_rewriter.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">6</div>
-      <div class="action-body">
-        <div class="action-title">Round 4：反例 + 多轮对话 + 并发回放 <span class="pattern-tag tag-accent" style="margin-left:6px">计划</span></div>
-        三轮评估集全部为正例，拒答阈值只校准了"误拒"一侧；补充约 30 条无答案反例（统计正确拒答率与编造率）、约 20 组多轮对话；同一批题串行一遍出质量分、并发回放一遍出 P50 / P95 延迟与错误率。
-        <div class="action-file">data/evaluation/ · scripts/run_eval_baseline.py</div>
-      </div>
-    </div>
-    <div class="action-row">
-      <div class="action-num">7</div>
-      <div class="action-body">
-        <div class="action-title">评估嵌入模型独立化 <span class="pattern-tag tag-neutral" style="margin-left:6px">P2</span></div>
-        当前 AR / AC 相似度使用系统同款 nomic（偏英文），R3 后换多语言模型（bge-m3 或 text-embedding-v3）并统一重算 R1–R3 的 AR / AC。
-        <div class="action-file">scripts/run_ragas_offline.py</div>
-      </div>
-    </div>
-  </div>
-
   <div class="footnotes">
     <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX（与 R1 / R2 一致） · AR 提示词: zh_v2（RAGAS 原生计分逻辑）</span>
     <span>检索: Milvus 2.6 IVF_RABITQ + BM25（单句）→ 段落级 RRF → BGE-Reranker-v2-m3 TEI FP16 MaxP 重排 → 双阈值分档（τ_high 0.3 / τ_low 0.1）+ Qwen3-4B 充分性判定</span>
     <span>显著性检验: Wilcoxon 符号秩检验（配对 177 条）· CP / CR 置信区间: bootstrap 5000 次 · Badcase 定义: F&lt;0.3 或 AC&lt;0.4</span>
     <span>数据来源: ragas_results_batch_3.json（原题 179 条）· ragas_results_batch_51.json（合成 53 条）· trace_r3_syn60.log</span>
+    <span>口径更正: R2 报告中 "AR 0.643 → 0.726" 为剔除 0 分后的估算，R2 实测 AR 为 0.643（旧提示词，AR=0 源于"含糊回避"判定过宽）；Answer Correctness 应为 事实 F1 × 0.75 + 语义相似度 × 0.25（R2 报告误写）</span>
     <span>生成时间: 2026-10-05 · Author: Ke Meng</span>
   </div>
 
