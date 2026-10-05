@@ -13,7 +13,7 @@
 | Round 3 压力轮 | 上线评估 | 同一评估集 + 60 条模拟真实用户问法的合成数据 | qwen-plus | 验证 R2 - 10项系统与知识库优化效果；新增 60 条贴近真实用户问法的合成数据，测出真实 CP / CR，对标生产上线指标 |
 
 
-完整报告：
+**完整报告**：
 
 [Round 3 Evaluation Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round3_evaluation_report.html)
 
