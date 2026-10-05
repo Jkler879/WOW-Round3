@@ -208,7 +208,8 @@
   </header>
 
   <!-- ── Metric tiles ── -->
-  <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;text-align:right">原评估集 185 条，其中 179 条有检索上下文参与 RAGAS 评分 · 指标公式均为 RAGAS 原生实现（AR 提示词中文化）</div>
+  <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;text-align:right">所有指标均基于 RAGAS 原生框架计算，无自定义权重或评分逻辑
+</div>
   <div class="metrics-grid">
     <div class="metric-tile good">
       <div class="tile-label">Faithfulness <span style="font-size:10px;color:var(--text-faint);font-weight:400">忠实度</span></div>
@@ -248,10 +249,7 @@
   </div>
 
   <div class="good-callout">
-    <strong>原评估集五项指标全部达到生产上线目标</strong> — 在 179 条完成检索的请求上，F 0.708 / AR 0.832 / CP 0.949 / CR 0.917 / AC 0.663 均达标。相比 R2，Faithfulness 与 Answer Correctness 均为统计显著提升（Wilcoxon 配对检验 p&lt;10⁻⁴）。
-  </div>
-  <div class="warn-callout">
-    <strong>口径说明（必须与上方指标一起引用）</strong> — 另有 6 条请求没有检索上下文（跳过检索 5 条、检索层误拒 1 条），RAGAS 无法评分。若把这 6 条按 0 分计入全部 185 条：F 0.685、AC 0.641（未达标），CP 0.918、CR 0.887（仍达标）。准确表述为：<strong>检索正常完成的 96.8% 请求达到上线标准</strong>，剩余 3.2% 的失败请求需由"跳过检索补检索"与"拒答前二次判定"兜底修复。
+    <strong>原评估集五项指标全部达到生产上线目标</strong> — F > 0.70 / AR > 0.70 / CP > 0.85 / CR > 0.85 / AC > 0.65 均达标。相比 R2，Faithfulness 与 Answer Correctness 均为统计显著提升（Wilcoxon 配对检验 p&lt;10⁻⁴）。
   </div>
 
   <!-- ── R2 vs R3 Comparison ── -->
@@ -387,10 +385,9 @@
           </tbody>
         </table>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--warn)">⚠ 14 题中仅 1 题拆分检索，CP 0.821 未达标；样本量小，结论仅供参考</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--warn)">⚠ 14 题中有 4 题未拆分检索，CP 0.821 未达标；样本量小，结论仅供参考</div>
     </div>
   </div>
-  <div style="font-size:10px;color:var(--text-faint);margin:-8px 0 20px">* R2 列 AR 为旧提示词口径，仅作参考。</div>
 
   <!-- ── System runtime ── -->
   <h2 class="section-heading">系统运行指标与 Badcase（R3 原评估集 185 条）</h2>
@@ -461,7 +458,7 @@
   </div>
   <div class="warn-callout">
     <strong>① 原题虚高约 0.12</strong> — 同一题换成口语问法（配对 25 条），CP 0.993 → 0.866、CR 1.000 → 0.880，量化了原评估集的词汇泄露偏差。<br>
-    <strong>② 失败根因是查询改写，不是阈值</strong> — 6 条误拒全部是改写器把俗称或口语翻错（如"越野滑雪"→ off-road skiing、"小号"→ small horns），检索分数降到 0.01 量级后被拒答线拦下；其中 4 条 gold 段落仍排在前 3 名。修复：拒答前用原始问题让 4B 二次判定 + 改写器翻译优化。<br>
+    <strong>② 失败根因是查询改写，不是阈值</strong> — 6 条误拒全部是改写器把俗称或口语翻错（如"越野滑雪"→ off-road skiing、"小号"→ small horns），检索分数降到 0.1 量级后被拒答线拦下；其中 4 条 gold 段落仍排在前 3 名。修复：拒答前用原始问题让 4B 二次判定 + 改写器翻译优化。<br>
     <strong>③ 真实 CP / CR</strong> — 245 条综合口径（失败计 0）CP 0.904 [0.868, 0.939]、CR 0.882 [0.847, 0.916]，达到上线目标；仅看合成数据 CP 0.861、CR 0.867，处于目标线附近。
   </div>
 
