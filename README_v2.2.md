@@ -82,7 +82,7 @@
 
 **规模：** 30 条改写数据 + 30 条对抗性数据。
 
-**生成模型：** Claude Sonnet 5.5 负责 30 条改写数据生成；Claude Opus 5.5 负责质量评估与修正 and 生成 30 条对抗性数据。
+**生成模型：** Claude Sonnet 5.5 负责数据生成；Claude Opus 5.5 负责质量评估与优化
 
 **合成逻辑：**
 - **改写集：** 从 Round 2 结果中按 topic 抽取 30 个高 Faithfulness 题（F ≥ 0.7，15 simple + 15 reasoning），避开 chunk 关键词改写为口语化问法，GT 沿用原题，用于逐题配对比较。
