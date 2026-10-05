@@ -10,7 +10,7 @@
 Round 1, 2 轮已结束，具体优化步骤、指标提升在每轮完整报告中.
 
 ### 完整飞轮报告：
-  [Round 2 RAGAS Diagnostic
+  [Round 2 RAGAS Evaluation
   Report](https://htmlpreview.github.io/?https://github.com/Jkler879/WOW-Round3/blob/main/round3_evaluation_report.html)
   
   [Round 2 RAGAS Diagnostic
