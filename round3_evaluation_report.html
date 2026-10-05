@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round 3 RAGAS Evaluation Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg:          #0A0E1A;
+    --surface:     #111827;
+    --surface-2:   #1C2333;
+    --surface-3:   #242F44;
+    --border:      #2D3A52;
+    --text:        #F0F4FF;
+    --text-muted:  #8896AD;
+    --text-faint:  #4A5568;
+    --accent:      #6366F1;
+    --accent-dim:  rgba(99,102,241,0.15);
+    --good:        #10B981;
+    --good-dim:    rgba(16,185,129,0.15);
+    --warn:        #F59E0B;
+    --warn-dim:    rgba(245,158,11,0.15);
+    --bad:         #EF4444;
+    --bad-dim:     rgba(239,68,68,0.15);
+    --neutral:     #64748B;
+    --neutral-dim: rgba(100,116,139,0.15);
+    --mono: "IBM Plex Mono", "Courier New", monospace;
+    --sans: "Inter", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg:          #F1F5FF;
+      --surface:     #FFFFFF;
+      --surface-2:   #F8FAFF;
+      --surface-3:   #EEF2FF;
+      --border:      #D1D9EF;
+      --text:        #0F172A;
+      --text-muted:  #475569;
+      --text-faint:  #94A3B8;
+      --accent-dim:  rgba(99,102,241,0.10);
+      --good-dim:    rgba(16,185,129,0.10);
+      --warn-dim:    rgba(245,158,11,0.10);
+      --bad-dim:     rgba(239,68,68,0.10);
+      --neutral-dim: rgba(100,116,139,0.10);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #F1F5FF; --surface: #FFFFFF; --surface-2: #F8FAFF; --surface-3: #EEF2FF;
+    --border: #D1D9EF; --text: #0F172A; --text-muted: #475569; --text-faint: #94A3B8;
+    --accent-dim: rgba(99,102,241,0.10); --good-dim: rgba(16,185,129,0.10);
+    --warn-dim: rgba(245,158,11,0.10); --bad-dim: rgba(239,68,68,0.10);
+    --neutral-dim: rgba(100,116,139,0.10); color-scheme: light;
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  h1,h2,h3,h4 { margin: 0; font-family: var(--sans); text-wrap: balance; }
+  p { margin: 0; }
+  table { border-collapse: collapse; width: 100%; }
+  code, .mono { font-family: var(--mono); }
+
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+  .page-header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .header-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .header-title { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 8px; }
+  .header-meta { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; }
+  .meta-chip { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+  .meta-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  /* ── Metric tiles ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 800px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 500px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+  .metric-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 10px; position: relative; overflow: hidden; }
+  .metric-tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 2px; border-radius: 10px 10px 0 0; }
+  .metric-tile.good::before { background: var(--good); }
+  .metric-tile.warn::before { background: var(--warn); }
+  .metric-tile.bad::before  { background: var(--bad); }
+  .metric-tile.neutral::before { background: var(--neutral); }
+  .tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .tile-value { font-family: var(--mono); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 6px; }
+  .tile-value.good { color: var(--good); } .tile-value.warn { color: var(--warn); } .tile-value.bad { color: var(--bad); } .tile-value.neutral { color: var(--neutral); }
+  .tile-delta { font-family: var(--mono); font-size: 11px; margin-bottom: 6px; }
+  .delta-up { color: var(--good); } .delta-down { color: var(--bad); } .delta-flat { color: var(--text-faint); }
+  .tile-bar-track { height: 3px; background: var(--surface-3); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+  .tile-bar-fill { height: 100%; border-radius: 2px; }
+  .tile-bar-fill.good { background: var(--good); } .tile-bar-fill.warn { background: var(--warn); } .tile-bar-fill.bad { background: var(--bad); }
+  .tile-note { font-size: 11px; color: var(--text-faint); line-height: 1.4; }
+
+  /* ── Cards ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 750px) { .three-col { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .three-col { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 20px 16px; }
+  .card-full { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px 20px 16px; margin-bottom: 20px; }
+  .card-title { font-size: 12px; font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+  /* ── Tables ── */
+  .data-table-wrap { overflow-x: auto; }
+  .data-table { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .data-table th { text-align: left; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); padding: 0 10px 8px 0; font-weight: 500; white-space: nowrap; }
+  .data-table td { padding: 7px 10px 7px 0; border-top: 1px solid var(--border); vertical-align: middle; }
+  .cell-label { font-family: var(--sans); font-size: 12px; color: var(--text); font-weight: 500; }
+  .cell-sub { font-family: var(--sans); font-size: 11px; color: var(--text-muted); }
+  .score { display: inline-flex; align-items: center; gap: 6px; }
+  .score-num.good { color: var(--good); } .score-num.warn { color: var(--warn); } .score-num.bad { color: var(--bad); } .score-num.neutral { color: var(--neutral); }
+  .score-pip { width: 32px; height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .score-pip-fill { height: 100%; border-radius: 2px; }
+  .score-pip-fill.good { background: var(--good); } .score-pip-fill.warn { background: var(--warn); } .score-pip-fill.bad { background: var(--bad); }
+
+  /* ── Badcase stats ── */
+  .badcase-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 700px) { .badcase-stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 14px 12px; }
+  .stat-tile-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+  .stat-tile-value { font-family: var(--mono); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; margin-bottom: 4px; }
+  .stat-tile-sub { font-size: 11px; color: var(--text-faint); }
+
+  /* ── Diagnostic cards ── */
+  .diag-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; }
+  .diag-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .diag-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-family: var(--mono); font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .diag-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .diag-count { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin-left: auto; }
+  .diag-body { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px; }
+  .diag-fix { background: var(--good-dim); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: var(--good); font-family: var(--mono); }
+  .diag-fix-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.8; margin-bottom: 3px; }
+
+  /* ── Callouts ── */
+  .insight { background: var(--accent-dim); border: 1px solid rgba(99,102,241,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .insight strong { color: var(--accent); font-family: var(--mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .warn-callout { background: var(--warn-dim); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .warn-callout strong { color: var(--warn); }
+  .good-callout { background: var(--good-dim); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 12px; line-height: 1.6; color: var(--text); }
+  .good-callout strong { color: var(--good); }
+
+  /* ── Section headings ── */
+  .section-heading { font-size: 15px; font-weight: 700; color: var(--text); margin: 28px 0 14px; display: flex; align-items: center; gap: 8px; }
+  .section-heading::before { content: ''; display: inline-block; width: 3px; height: 16px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Comparison row ── */
+  .compare-row { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 13px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .compare-row:first-child { border-top: none; }
+  .compare-label { width: 160px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+  .compare-r1 { color: var(--text-faint); width: 54px; text-align: right; }
+  .compare-arrow { color: var(--text-faint); font-size: 10px; }
+  .compare-r2 { width: 54px; text-align: right; font-weight: 600; }
+  .compare-bar-wrap { flex: 1; position: relative; height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+  .compare-bar-r1 { position: absolute; left: 0; top: 0; height: 100%; background: var(--text-faint); border-radius: 3px; opacity: 0.5; }
+  .compare-bar-r2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; }
+  .compare-delta { font-size: 10px; width: 52px; text-align: right; flex-shrink: 0; }
+
+  /* ── Action items ── */
+  .action-row { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-top: 1px solid var(--border); }
+  .action-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-dim); color: var(--accent); font-family: var(--mono); font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .action-body { flex: 1; font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .action-title { font-weight: 600; color: var(--text); font-family: var(--sans); margin-bottom: 2px; }
+  .action-file { font-family: var(--mono); font-size: 10px; color: var(--text-faint); }
+
+  /* ── Target bar ── */
+  .target-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+  .target-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+  .target-metric { margin-bottom: 14px; }
+  .target-metric-header { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; margin-bottom: 6px; }
+  .target-metric-name { color: var(--text-muted); }
+  .target-values { display: flex; gap: 12px; align-items: center; }
+  .target-r1 { color: var(--text-faint); }
+  .target-r2 { color: var(--warn); font-weight: 600; }
+  .target-r3 { color: var(--good); font-weight: 600; }
+  .target-bar-track { flex: 1; height: 8px; background: var(--surface-3); border-radius: 4px; position: relative; overflow: hidden; }
+  .target-bar-r1  { position: absolute; left: 0; top: 0; height: 100%; background: var(--text-faint); border-radius: 4px; opacity: 0.4; }
+  .target-bar-r2  { position: absolute; left: 0; top: 0; height: 100%; background: var(--warn); border-radius: 4px; opacity: 0.7; }
+  .target-bar-r3  { position: absolute; left: 0; top: 0; height: 100%; background: var(--good); border-radius: 4px; opacity: 0.3; }
+  .target-marker  { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--good); border-radius: 1px; }
+
+  .footnotes { margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-faint); line-height: 1.7; font-family: var(--mono); }
+  .footnotes span { display: block; }
+
+  .pattern-tag { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .tag-bad     { background: var(--bad-dim);     color: var(--bad); }
+  .tag-warn    { background: var(--warn-dim);     color: var(--warn); }
+  .tag-neutral { background: var(--neutral-dim);  color: var(--neutral); }
+  .tag-accent  { background: var(--accent-dim);   color: var(--accent); }
+  .tag-good    { background: var(--good-dim);      color: var(--good); }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- ── Header ── -->
+  <header class="page-header">
+    <div class="header-eyebrow">Data Flywheel · Evaluation</div>
+    <h1 class="header-title">Round 3 RAGAS Evaluation Report</h1>
+    <div class="header-meta">
+      <span class="meta-chip"><span class="dot"></span>评估日期：2026-10-05</span>
+      <span class="meta-chip"><span class="dot"></span>Judge LLM：qwen-plus</span>
+      <span class="meta-chip"><span class="dot"></span>框架：ragas 0.4.3</span>
+      <span class="meta-chip"><span class="dot"></span>样本：原题 185 条 + 合成 60 条</span>
+      <span class="meta-chip"><span class="dot"></span>AR 提示词：zh_v2</span>
+      <span class="meta-chip"><span class="dot"></span>主 LLM：qwen3-30b-a3b</span>
+    </div>
+  </header>
+
+  <!-- ── Metric tiles ── -->
+  <div style="font-size:11px;color:var(--text-faint);margin-bottom:10px;text-align:right">原评估集 185 条，其中 179 条有检索上下文参与 RAGAS 评分 · 指标公式均为 RAGAS 原生实现（AR 提示词中文化）</div>
+  <div class="metrics-grid">
+    <div class="metric-tile good">
+      <div class="tile-label">Faithfulness <span style="font-size:10px;color:var(--text-faint);font-weight:400">忠实度</span></div>
+      <div class="tile-value good">0.708</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.098</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.610</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:70.8%"></div></div>
+      <div class="tile-note">LLM 拆解答案为子声明 → 逐条验证文档支撑 → 支撑数 / 总声明数。目标 ≥0.70</div>
+    </div>
+    <div class="metric-tile good">
+      <div class="tile-label">Answer Relevancy <span style="font-size:10px;color:var(--text-faint);font-weight:400">答案相关性</span></div>
+      <div class="tile-value good">0.832</div>
+      <div class="tile-delta"><span class="delta-flat">口径更新</span> <span style="color:var(--text-faint);font-size:10px">R2 0.643（旧提示词）</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:83.2%"></div></div>
+      <div class="tile-note">LLM 从答案反推 3 个问题 → 与原问题 embedding 相似度均值；全部判为回避则记 0。目标 ≥0.70</div>
+    </div>
+    <div class="metric-tile good">
+      <div class="tile-label">Context Precision <span style="font-size:10px;color:var(--text-faint);font-weight:400">上下文精准率</span></div>
+      <div class="tile-value good">0.949</div>
+      <div class="tile-delta"><span class="delta-flat">→ −0.001</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.950</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:94.9%"></div></div>
+      <div class="tile-note">LLM 逐块判断上下文对得出 GT 是否有用 → 按排序加权的精准率。目标 ≥0.85</div>
+    </div>
+    <div class="metric-tile good">
+      <div class="tile-label">Context Recall <span style="font-size:10px;color:var(--text-faint);font-weight:400">上下文召回率</span></div>
+      <div class="tile-value good">0.917</div>
+      <div class="tile-delta"><span class="delta-down">↓ −0.020</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.937</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:91.7%"></div></div>
+      <div class="tile-note">LLM 逐条判断 GT 陈述能否在上下文中找到出处 → 覆盖条数 / 总条数。目标 ≥0.85</div>
+    </div>
+    <div class="metric-tile good">
+      <div class="tile-label">Answer Correctness <span style="font-size:10px;color:var(--text-faint);font-weight:400">答案正确性</span></div>
+      <div class="tile-value good">0.663</div>
+      <div class="tile-delta"><span class="delta-up">↑ +0.069</span> <span style="color:var(--text-faint);font-size:10px">vs R2 0.594</span></div>
+      <div class="tile-bar-track"><div class="tile-bar-fill good" style="width:66.3%"></div></div>
+      <div class="tile-note">答案与 GT 的事实 F1 × 0.75 + 语义相似度 × 0.25（需 ground truth）。目标 ≥0.65</div>
+    </div>
+  </div>
+
+  <div class="good-callout">
+    <strong>原评估集五项指标全部达到生产上线目标</strong> — 在 179 条完成检索的请求上，F 0.708 / AR 0.832 / CP 0.949 / CR 0.917 / AC 0.663 均达标。相比 R2，Faithfulness 与 Answer Correctness 均为统计显著提升（Wilcoxon 配对检验 p&lt;10⁻⁴）。
+  </div>
+  <div class="warn-callout">
+    <strong>口径说明（必须与上方指标一起引用）</strong> — 另有 6 条请求没有检索上下文（跳过检索 5 条、检索层误拒 1 条），RAGAS 无法评分。若把这 6 条按 0 分计入全部 185 条：F 0.685、AC 0.641（未达标），CP 0.918、CR 0.887（仍达标）。准确表述为：<strong>检索正常完成的 96.8% 请求达到上线标准</strong>，剩余 3.2% 的失败请求需由"跳过检索补检索"与"拒答前二次判定"兜底修复。
+  </div>
+
+  <!-- ── R2 vs R3 Comparison ── -->
+  <h2 class="section-heading">R2 → R3 全指标对比</h2>
+  <div class="card-full">
+    <div class="compare-row">
+      <span class="compare-label">Faithfulness</span>
+      <span class="compare-r1">0.610</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.708</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:61%"></div>
+        <div class="compare-bar-r2" style="width:70.8%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-up">+9.8%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Answer Relevancy *</span>
+      <span class="compare-r1">0.643</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.832</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:64.3%"></div>
+        <div class="compare-bar-r2" style="width:83.2%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-flat">口径不同</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Context Precision</span>
+      <span class="compare-r1">0.950</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.949</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:95%"></div>
+        <div class="compare-bar-r2" style="width:94.9%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-flat">−0.1%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Context Recall</span>
+      <span class="compare-r1">0.937</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.917</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:93.7%"></div>
+        <div class="compare-bar-r2" style="width:91.7%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-down">−2.0%</span>
+    </div>
+    <div class="compare-row">
+      <span class="compare-label">Answer Correctness</span>
+      <span class="compare-r1">0.594</span>
+      <span class="compare-arrow">→</span>
+      <span class="compare-r2" style="color:var(--good)">0.663</span>
+      <div class="compare-bar-wrap">
+        <div class="compare-bar-r1" style="width:59.4%"></div>
+        <div class="compare-bar-r2" style="width:66.3%; background:var(--good)"></div>
+      </div>
+      <span class="compare-delta delta-up">+6.9%</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-faint);margin-top:8px">* R2 的 AR 使用旧中文提示词计算（含 21 条误判的 0 分），R3 使用 zh_v2 提示词，二者不可直接比较。R2 AR 将以 zh_v2 重算后补充可比数值。</div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">配对显著性检验（共同 ID 177 条）</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>R2</th><th>R3</th><th>Δ</th><th>升 / 降</th><th>Wilcoxon p</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td>0.613</td><td><span class="score-num good">0.706</span></td><td class="delta-up">+0.092</td><td>93 / 50</td><td><span class="pattern-tag tag-good">7.8e-5 显著</span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td>0.596</td><td><span class="score-num good">0.662</span></td><td class="delta-up">+0.065</td><td>107 / 60</td><td><span class="pattern-tag tag-good">3.9e-5 显著</span></td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td>0.954</td><td>0.948</td><td class="delta-flat">−0.005</td><td>4 / 4</td><td><span class="pattern-tag tag-neutral">0.62 无差异</span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td>0.936</td><td>0.916</td><td class="delta-down">−0.020</td><td>3 / 8</td><td><span class="pattern-tag tag-warn">0.051 边缘</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">解读</div>
+      <div class="insight"><strong>F / AC</strong> 显著提升来自"上下文更少更准 + 答案更短更聚焦"的组合效应（见下方优化归因）。</div>
+      <div class="insight"><strong>CP</strong> 维持 0.95 高位：段落级 RRF + MaxP 重排让 gold 段落稳定排在第 1 位。</div>
+      <div class="insight" style="margin-bottom:0"><strong>CR −0.02</strong> 为有意接受的代价：返回块数从固定 5 块降到 1–2 块，换取更低的噪声与更高的忠实度，仍远高于 0.85。</div>
+    </div>
+  </div>
+
+  <!-- ── Question type breakdown ── -->
+  <h2 class="section-heading">按问题类型分解（R3 原评估集）</h2>
+  <div class="three-col">
+    <div class="card">
+      <div class="card-title">Simple — n=90</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>R3</th><th>R2</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td><span class="score"><span class="score-num good">0.796</span><span class="score-pip"><span class="score-pip-fill good" style="width:79.6%"></span></span></span></td><td class="cell-sub">0.689</td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td><td><span class="score"><span class="score-num good">0.859</span><span class="score-pip"><span class="score-pip-fill good" style="width:85.9%"></span></span></span></td><td class="cell-sub">0.694*</td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td><span class="score"><span class="score-num good">0.972</span><span class="score-pip"><span class="score-pip-fill good" style="width:97.2%"></span></span></span></td><td class="cell-sub">0.984</td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td><span class="score"><span class="score-num good">0.956</span><span class="score-pip"><span class="score-pip-fill good" style="width:95.6%"></span></span></span></td><td class="cell-sub">0.973</td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td><span class="score"><span class="score-num good">0.718</span><span class="score-pip"><span class="score-pip-fill good" style="width:71.8%"></span></span></span></td><td class="cell-sub">0.640</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--good)">✓ 五项全部达标</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Reasoning — n=75</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>R3</th><th>R2</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td><span class="score"><span class="score-num bad">0.597</span><span class="score-pip"><span class="score-pip-fill bad" style="width:59.7%"></span></span></span></td><td class="cell-sub">0.495</td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td><td><span class="score"><span class="score-num good">0.792</span><span class="score-pip"><span class="score-pip-fill good" style="width:79.2%"></span></span></span></td><td class="cell-sub">0.615*</td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td><span class="score"><span class="score-num good">0.944</span><span class="score-pip"><span class="score-pip-fill good" style="width:94.4%"></span></span></span></td><td class="cell-sub">0.934</td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td><span class="score"><span class="score-num good">0.878</span><span class="score-pip"><span class="score-pip-fill good" style="width:87.8%"></span></span></span></td><td class="cell-sub">0.885</td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td><span class="score"><span class="score-num bad">0.596</span><span class="score-pip"><span class="score-pip-fill bad" style="width:59.6%"></span></span></span></td><td class="cell-sub">0.522</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--bad)">⚠ F / AC 提升约 +0.10 / +0.07，但仍是唯一未达标题型，R3 后首要攻坚目标</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Multi-hop — n=14</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>R3</th><th>R2</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td><span class="score"><span class="score-num good">0.727</span><span class="score-pip"><span class="score-pip-fill good" style="width:72.7%"></span></span></span></td><td class="cell-sub">0.695</td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td><td><span class="score"><span class="score-num good">0.877</span><span class="score-pip"><span class="score-pip-fill good" style="width:87.7%"></span></span></span></td><td class="cell-sub">0.459*</td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td><span class="score"><span class="score-num warn">0.821</span><span class="score-pip"><span class="score-pip-fill warn" style="width:82.1%"></span></span></span></td><td class="cell-sub">0.810</td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td><span class="score"><span class="score-num good">0.881</span><span class="score-pip"><span class="score-pip-fill good" style="width:88.1%"></span></span></span></td><td class="cell-sub">0.964</td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td><span class="score"><span class="score-num good">0.662</span><span class="score-pip"><span class="score-pip-fill good" style="width:66.2%"></span></span></span></td><td class="cell-sub">0.669</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--warn)">⚠ 14 题中仅 1 题拆分检索，CP 0.821 未达标；样本量小，结论仅供参考</div>
+    </div>
+  </div>
+  <div style="font-size:10px;color:var(--text-faint);margin:-8px 0 20px">* R2 列 AR 为旧提示词口径，仅作参考。</div>
+
+  <!-- ── System runtime ── -->
+  <h2 class="section-heading">系统运行指标（R3 原评估集 185 条）</h2>
+  <div class="badcase-stats">
+    <div class="stat-tile">
+      <div class="stat-tile-label">答案长度中位数</div>
+      <div class="stat-tile-value" style="color:var(--good)">121 字</div>
+      <div class="stat-tile-sub">R2 188 字 · simple 78 / reasoning 163</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">每题上下文块数</div>
+      <div class="stat-tile-value" style="color:var(--good)">1–2 块</div>
+      <div class="stat-tile-sub">R2 固定 5 块 · 1 块 116 题 / 2 块 47 题</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">跳过检索</div>
+      <div class="stat-tile-value" style="color:var(--bad)">2.7%</div>
+      <div class="stat-tile-sub">5 / 185，其中 3 条谎称"根据知识库"</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">检索层误拒</div>
+      <div class="stat-tile-value" style="color:var(--warn)">0.5%</div>
+      <div class="stat-tile-sub">1 / 185（代词主语句 #254）</div>
+    </div>
+  </div>
+  <div class="badcase-stats">
+    <div class="stat-tile">
+      <div class="stat-tile-label">检索分档：置信</div>
+      <div class="stat-tile-value" style="color:var(--good)">94.1%</div>
+      <div class="stat-tile-sub">174 / 185 · 最高分 ≥ 0.3</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">检索分档：低置信</div>
+      <div class="stat-tile-value" style="color:var(--warn)">2.7%</div>
+      <div class="stat-tile-sub">5 / 185 · 4B 判定 pass 后带标记返回</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">规则检测：套话 / 描述检索</div>
+      <div class="stat-tile-value" style="color:var(--warn)">14.6%</div>
+      <div class="stat-tile-sub">27 / 185 · 只监控不改写</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">规则检测：英文片段 / 名称不符</div>
+      <div class="stat-tile-value" style="color:var(--warn)">8.6% / 3.2%</div>
+      <div class="stat-tile-sub">16 / 185 · 6 / 185</div>
+    </div>
+  </div>
+
+  <!-- ── Badcase stats ── -->
+  <h2 class="section-heading">Badcase 统计</h2>
+  <div class="badcase-stats">
+    <div class="stat-tile">
+      <div class="stat-tile-label">R2 Badcase</div>
+      <div class="stat-tile-value" style="color:var(--warn)">37</div>
+      <div class="stat-tile-sub">F&lt;0.3 或 AC&lt;0.4</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">R3 Badcase</div>
+      <div class="stat-tile-value" style="color:var(--good)">27</div>
+      <div class="stat-tile-sub">较 R2 减少 27%（另有 6 条无上下文未评分）</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">R3 修复</div>
+      <div class="stat-tile-value" style="color:var(--good)">22</div>
+      <div class="stat-tile-sub">R2 bad → R3 good</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-tile-label">R3 回归</div>
+      <div class="stat-tile-value" style="color:var(--bad)">14</div>
+      <div class="stat-tile-sub">R2 good → R3 bad（新增）</div>
+    </div>
+  </div>
+  <div class="insight">
+    <strong>诊断</strong> R3 的 27 条 badcase 中 reasoning 占 19 条（70%）。典型模式：① 文档写了相关事实，模型仍回答"知识库现有资料未说明原因"；② 在原因陈述后追加推测或内置知识（举例、背景补充）；③ 多跳题只检索一次，后半部分缺乏依据。14 条回归集中在 reasoning 与 multi_hop，与"返回块数减少后，模型更倾向用内置知识补全"一致。
+  </div>
+
+  <!-- ── Attribution ── -->
+  <h2 class="section-heading">Round 2 后优化如何支撑指标提升</h2>
+  <div class="warn-callout">
+    <strong>归因方法说明</strong> — 以下优化在 R3 前一并上线，未逐项做消融实验。归因依据为各项优化的作用机制，结合 trace 日志、逐题配对对比与 R2 相关性分析等证据，属于机制归因而非逐项测量。
+  </div>
+  <div class="card-full">
+    <div class="action-row">
+      <div class="action-num">1</div>
+      <div class="action-body">
+        <div class="action-title">检索层重构：段落级 RRF + MaxP 重排 <span class="pattern-tag tag-good" style="margin-left:6px">CP 维持 0.95</span></div>
+        单句召回后先归并到父段落再融合，同段多句不再挤占候选名额；整段分与命中单句分取最大值，避免多篇文章拼接导致相关句被稀释。证据：test10 与 trace 中原题 gold 段落最高分 0.86–0.9997，排名第 1。
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">2</div>
+      <div class="action-body">
+        <div class="action-title">双阈值分档 + 去掉 k_min 保底 + 4B 充分性判定 <span class="pattern-tag tag-good" style="margin-left:6px">F ↑ AC ↑</span> <span class="pattern-tag tag-warn">CR −0.02</span></div>
+        最高分 ≥0.3 只返回高分段落；0.1–0.3 交由本地 Qwen3-4B 逐块判定；&lt;0.1 由代码输出固定话术拒答（参考 CRAG 检索评估器）。证据：trace 显示原保底块 8 个中 7 个分数 &lt;0.1，属纯噪声；上下文从 5 块降到 1–2 块，噪声输入减少是 F / AC 提升的主要来源之一。
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · src/core/ReAct_Agent/tools/agent.py · config/config_path.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">3</div>
+      <div class="action-body">
+        <div class="action-title">答案长度控制 <span class="pattern-tag tag-good" style="margin-left:6px">F ↑ AC ↑</span></div>
+        首句直接作答、答完即停、按题型给出长度参考（simple 约 100 字，reasoning 约 200 字）。证据：R2 中答案长度与 F、AC 相关系数为 −0.45、−0.41；R3 答案中位长度 188 → 121 字，陈述越少、无依据陈述越少，也更贴近 GT 长度。
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py（QUESTION_TYPE_RULES）</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">4</div>
+      <div class="action-body">
+        <div class="action-title">System Prompt 精简与模块化 <span class="pattern-tag tag-good" style="margin-left:6px">F ↑</span></div>
+        同时生效指令约 40 条 → 约 17 条，渲染长度 3.9k → 2.4k 字；推理类规则（证据提取、输出前自检）只在 reasoning 题注入，低置信约束由 {evidence_rule} 按检索结果动态注入。依据：ManyIFEval / IFScale 表明多指令同时遵循率随数量指数下降。
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py（SYSTEM_PROMPT · EVIDENCE_RULES）</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">5</div>
+      <div class="action-body">
+        <div class="action-title">翻译与专有名词保真 <span class="pattern-tag tag-accent" style="margin-left:6px">AC 小幅 ↑</span></div>
+        答案全部中文转述，专有名词统一"中文译名（英文原名）"且只翻译文档出现的部分，保持原文确定程度、数量与因果强度。规则检测显示括号英文名与原文不符的比例为 3.2%，仍有残留。
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/core/postprocess/detectors.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">6</div>
+      <div class="action-body">
+        <div class="action-title">评测侧修正：AR 提示词 zh_v2 <span class="pattern-tag tag-neutral" style="margin-left:6px">测量修正，非系统能力</span></div>
+        R2 的 AR=0 根因是"含糊回避"判定过宽（把"给出答案 + 说明资料缺失"判为回避），而非跨语言问题。zh_v2 保留 RAGAS 原生计分逻辑，仅将回避定义对齐原版语义并换成中文示例；验证集 24 条误判 0 分恢复 22 条，真正回避的 3/3 仍判 0。
+        <div class="action-file">scripts/run_ragas_offline.py（--ar-prompt zh_v2）</div>
+      </div>
+    </div>
+  </div>
+  <div class="good-callout">
+    <strong>归纳</strong> — F 与 AC 的显著提升主要来自 ②③④ 的合力：<strong>给模型的材料更少更准，要求模型写得更短更聚焦</strong>。CP 维持高位靠 ①；CR 小幅下降是 ② 有意接受的代价。
+  </div>
+
+  <!-- ── Synthetic data ── -->
+  <h2 class="section-heading">60 条合成数据：真实问法下的检索能力</h2>
+  <div class="insight">
+    <strong>目的</strong> R1–R3 原评估集由 LLM 读取知识库片段生成，问题用词与原文高度重合，CP / CR 结构性虚高。合成数据分两组：改写集 30 条（R2 高分原题改为口语化问法，避开原文关键词，GT 沿用原题）；对抗集 30 条（从 gold 段落出发按"段落 → GT → 问题"生成，采用间接指代、俗称替换、前提核查、场景噪声四类问法）。
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">改写集 — n=30（RAGAS 有效 27）</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>RAGAS 原始</th><th>失败计 0</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td>0.768</td><td><span class="score-num bad">0.688</span></td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td><td>0.745</td><td class="cell-sub">—</td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td>0.987</td><td><span class="score-num good">0.888</span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td>1.000</td><td><span class="score-num good">0.900</span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td>0.694</td><td><span class="score-num bad">0.617</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-faint)">gold 命中 27/30 · 拒答 2 · 跳过检索 1 · 低置信 2</div>
+    </div>
+    <div class="card">
+      <div class="card-title">对抗集 — n=30（RAGAS 有效 26）</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>RAGAS 原始</th><th>失败计 0</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td>0.664</td><td><span class="score-num bad">0.575</span></td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td><td>0.710</td><td class="cell-sub">—</td></tr>
+            <tr><td><span class="cell-label">Context Precision</span></td><td>0.962</td><td><span class="score-num warn">0.833</span></td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td>0.962</td><td><span class="score-num warn">0.833</span></td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td>0.680</td><td><span class="score-num bad">0.590</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-faint)">gold 命中 25/30 · 拒答 4 · 低置信 2</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">问法变化的影响：改写题 vs 对应原题（配对 25 条）</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>指标</th><th>原问法</th><th>口语改写</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">Context Precision</span></td><td>0.993</td><td>0.866</td><td class="delta-down">−0.128</td></tr>
+            <tr><td><span class="cell-label">Context Recall</span></td><td>1.000</td><td>0.880</td><td class="delta-down">−0.120</td></tr>
+            <tr><td><span class="cell-label">Faithfulness</span></td><td>0.835</td><td>0.676</td><td class="delta-down">−0.159</td></tr>
+            <tr><td><span class="cell-label">Answer Correctness</span></td><td>0.713</td><td>0.597</td><td class="delta-down">−0.115</td></tr>
+            <tr><td><span class="cell-label">Answer Relevancy</span></td><td>0.884</td><td>0.780</td><td class="delta-down">−0.104</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-faint)">排除 5 条 GT 修订题；失败题按 0 分计入。量化了原评估集 CP / CR 约 0.12 的虚高幅度。</div>
+    </div>
+    <div class="card">
+      <div class="card-title">对抗集按问法（失败计 0）</div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>问法</th><th>n</th><th>CR</th><th>失败</th><th>F</th><th>AC</th></tr></thead>
+          <tbody>
+            <tr><td><span class="cell-label">间接指代</span></td><td>12</td><td>0.833</td><td>2</td><td>0.711</td><td>0.676</td></tr>
+            <tr><td><span class="cell-label">俗称替换</span></td><td>12</td><td>0.833</td><td>1</td><td>0.695</td><td>0.693</td></tr>
+            <tr><td><span class="cell-label">前提核查</span></td><td>4</td><td>0.750</td><td>1</td><td>0.532</td><td>0.645</td></tr>
+            <tr><td><span class="cell-label">场景噪声</span></td><td>2</td><td>1.000</td><td>0</td><td>0.458</td><td>0.688</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-faint)">F / AC 为 RAGAS 原始口径（有效样本）。</div>
+    </div>
+  </div>
+
+  <h2 class="section-heading">合成数据失败根因（trace 诊断）</h2>
+  <div class="card-full">
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>用户问法</th><th>改写后的英文查询</th><th>错误</th><th>gold 排名 / 分数</th></tr></thead>
+        <tbody>
+          <tr><td>1015</td><td><span class="cell-label">越野滑雪是一大类比赛</span></td><td>off-road skiing</td><td class="cell-sub">应为 cross-country skiing</td><td><span class="pattern-tag tag-warn">第 1 名 · 0.014</span></td></tr>
+          <tr><td>2011</td><td><span class="cell-label">k 开头的玉米热狗</span></td><td>ketchup-based corn dog</td><td class="cell-sub">应为 korn dogs</td><td><span class="pattern-tag tag-warn">第 1 名 · 0.036</span></td></tr>
+          <tr><td>2001</td><td><span class="cell-label">四脚蛇</span></td><td>…species of（俗称未翻出）</td><td class="cell-sub">应为 lizards</td><td><span class="pattern-tag tag-warn">第 1 名 · 0.034</span></td></tr>
+          <tr><td>2025</td><td><span class="cell-label">小号这类喇叭</span></td><td>small horns</td><td class="cell-sub">字面直译，应为 trumpet</td><td><span class="pattern-tag tag-warn">第 2 名 · 0.003</span></td></tr>
+          <tr><td>1008</td><td><span class="cell-label">一站到高处就心慌腿软</span></td><td>dizzy … after standing up</td><td class="cell-sub">语义误解，应为 acrophobia</td><td><span class="pattern-tag tag-warn">第 3 名 · 0.008</span></td></tr>
+          <tr><td>2021</td><td><span class="cell-label">史努比那个品种的狗</span></td><td>the dog in "Snoopy"</td><td class="cell-sub">未推出 beagle</td><td><span class="pattern-tag tag-bad">第 5 名 · 0.002</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="warn-callout">
+    <strong>结论：6 条误拒全部源于查询改写把口语 / 俗称翻错，阈值判断本身无误</strong> — 6 条最高分均在 0.003–0.036，远低于拒答线 0.1；但其中 4 条 gold 段落仍排在前 3 名，排序正确而绝对分极低。"低于 0.1 直接拒答"把改写错误放大成了不可挽回的拒答。修复方向：① 拒答前把用户原始中文问题一并交给 4B 再判一次（预计可挽回 4/6）；② 改写器对俗称、专有名词的翻译优化（提示词示例 → QLoRA 微调）。
+  </div>
+
+  <!-- ── True CP / CR ── -->
+  <h2 class="section-heading">当前系统真实 CP / CR 估计</h2>
+  <div class="insight">
+    <strong>方法</strong> ① 失败计 0：跳过检索、拒答等无上下文请求按 CP=0、CR=0 计入（用户确实没拿到资料，排除会高估能力）；② 区分问法分布：原题代表"问法接近原文"的上限，合成数据代表口语化、俗称、间接指代问法，更接近真实用户；③ bootstrap 5000 次给出 95% 置信区间。
+  </div>
+  <div class="card-full">
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>口径</th><th>样本</th><th>CP（95% CI）</th><th>CR（95% CI）</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td><span class="cell-label">原评估集</span></td><td>185</td><td>0.918 [0.878, 0.954]</td><td>0.887 [0.849, 0.923]</td><td class="cell-sub">上限：问法与原文高度重合</td></tr>
+          <tr><td><span class="cell-label">合成数据</span></td><td>60</td><td><span class="score-num warn">0.861</span> [0.771, 0.938]</td><td><span class="score-num warn">0.867</span> [0.783, 0.950]</td><td class="cell-sub">最接近真实用户问法的估计</td></tr>
+          <tr><td><span class="cell-label">全部合并</span></td><td>245</td><td><span class="score-num good">0.904</span> [0.868, 0.939]</td><td><span class="score-num good">0.882</span> [0.847, 0.916]</td><td class="cell-sub">综合口径（对外报告推荐）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="good-callout">
+    <strong>当前系统真实 CP ≈ 0.86–0.90，CR ≈ 0.87–0.88</strong> — 按全部 245 条、失败计 0 的综合口径，CP 0.904、CR 0.882，均达到 ≥0.85 的上线目标；仅看接近真实用户问法的合成数据，CP 0.861、CR 0.867，处于目标线附近且置信区间下限低于 0.85。合成数据每组 30 条、改写集取自高分原题存在选择偏差，结论用于判断方向与量级。
+  </div>
+
+  <!-- ── Production gate ── -->
+  <h2 class="section-heading">生产上线门槛对齐（R1 → R2 → R3）</h2>
+  <div class="target-block">
+    <div class="target-label">R1 / R2 / R3 原评估集（R3 为 179 条有效样本口径） · 竖线为上线目标</div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Faithfulness</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.490</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.610</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 0.708 ✅</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:70.8%; opacity:0.8"></div>
+        <div class="target-bar-r2" style="width:61%"></div>
+        <div class="target-bar-r1" style="width:49%"></div>
+        <div class="target-marker" style="left:70%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">失败计 0 口径 0.685，未达标</div>
+    </div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Answer Correctness</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.590</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.594</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 0.663 ✅</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:66.3%; opacity:0.8"></div>
+        <div class="target-bar-r2" style="width:59.4%"></div>
+        <div class="target-bar-r1" style="width:59%"></div>
+        <div class="target-marker" style="left:65%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">失败计 0 口径 0.641，未达标</div>
+    </div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Answer Relevancy</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.633*</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.643*</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 0.832 ✅</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:83.2%; opacity:0.8"></div>
+        <div class="target-bar-r2" style="width:64.3%"></div>
+        <div class="target-bar-r1" style="width:63.3%"></div>
+        <div class="target-marker" style="left:70%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">* R1 / R2 为旧提示词口径；R2 报告中的 0.726 为剔除 0 分后的估算，现予更正</div>
+    </div>
+
+    <div class="target-metric">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Context Precision</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.947⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.950⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 0.949 · 真实 0.904 ✅</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:90.4%; opacity:0.8"></div>
+        <div class="target-bar-r2" style="width:95%; opacity:0.4"></div>
+        <div class="target-bar-r1" style="width:94.7%"></div>
+        <div class="target-marker" style="left:85%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">真实值 = 245 条综合口径（失败计 0），合成数据单独 0.861</div>
+    </div>
+
+    <div class="target-metric" style="margin-bottom:0">
+      <div class="target-metric-header">
+        <span class="target-metric-name">Context Recall</span>
+        <span class="target-values">
+          <span class="target-r1">R1 0.903⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r2">R2 0.937⚠️</span><span style="color:var(--text-faint);font-size:10px">→</span>
+          <span class="target-r3">R3 0.917 · 真实 0.882 ✅</span>
+        </span>
+      </div>
+      <div class="target-bar-track">
+        <div class="target-bar-r3" style="width:88.2%; opacity:0.8"></div>
+        <div class="target-bar-r2" style="width:93.7%; opacity:0.4"></div>
+        <div class="target-bar-r1" style="width:90.3%"></div>
+        <div class="target-marker" style="left:85%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-faint);margin-top:4px">真实值 = 245 条综合口径（失败计 0），合成数据单独 0.867</div>
+    </div>
+  </div>
+
+  <!-- ── Measurement corrections ── -->
+  <h2 class="section-heading">评测口径更正</h2>
+  <div class="card-full">
+    <div class="action-row">
+      <div class="action-num">1</div>
+      <div class="action-body">
+        <div class="action-title">R2 报告"AR 0.643 → 0.726"更正</div>
+        0.726 为剔除 21 条 AR=0 后的均值估算，并非修复后重新评估所得。R2 实测 AR 为 0.643（旧提示词）。R2 / R1 的 AR 将以 zh_v2 重算后给出可比数值。
+        <div class="action-file">data/evaluation/ragas_results_batch_2.json</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">2</div>
+      <div class="action-body">
+        <div class="action-title">AR=0 根因更正</div>
+        AR 恰好为 0 来自"含糊回避"判定（3 次反推全部判为回避即记 0），而非跨语言相似度；中文问题生成在旧提示词下已正常工作。
+        <div class="action-file">scripts/run_ragas_offline.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">3</div>
+      <div class="action-body">
+        <div class="action-title">AC 计算方式更正</div>
+        RAGAS 原生 Answer Correctness = 答案与 GT 的事实 F1 × 0.75 + 语义相似度 × 0.25（R2 报告误写为"语义相似度 × 0.75 + Faithfulness × 0.25"）。
+        <div class="action-file">ragas 0.4.3 · AnswerCorrectness 默认权重</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Next steps ── -->
+  <h2 class="section-heading">上线前必须修复 / Round 4 计划</h2>
+  <div class="card-full">
+    <div class="action-row">
+      <div class="action-num">1</div>
+      <div class="action-body">
+        <div class="action-title">拒答前用原始问题二次判定 <span class="pattern-tag tag-bad" style="margin-left:6px">P0</span></div>
+        检索工具注入用户原始中文问题，判定器同时参考原问题与英文查询；最高分 &lt;0.3 的情况统一由 4B 决定是否拒答。针对合成数据 10% 误拒，预计可挽回 4/6。
+        <div class="action-file">src/core/ReAct_Agent/tools/retriever.py · agent.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">2</div>
+      <div class="action-body">
+        <div class="action-title">跳过检索时由代码补检索 + 空答案兜底话术 <span class="pattern-tag tag-bad" style="margin-left:6px">P0</span></div>
+        原题跳过检索 2.7%、合成 1.7%，且会谎称"根据知识库"；流式答案为空时未向用户推送兜底话术。
+        <div class="action-file">src/core/ReAct_Agent/tools/agent.py · src/main.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">3</div>
+      <div class="action-body">
+        <div class="action-title">查询改写阻塞事件循环 <span class="pattern-tag tag-bad" style="margin-left:6px">P0</span></div>
+        同步调用 4B 改写（1–2 s）直接运行在异步请求处理函数中，单 worker 吞吐上限约 0.5–1 req/s；改为 asyncio.to_thread 后再做并发压测。
+        <div class="action-file">src/main.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">4</div>
+      <div class="action-body">
+        <div class="action-title">Reasoning 题专项 + 生成后核验 <span class="pattern-tag tag-warn" style="margin-left:6px">P1</span></div>
+        reasoning F 0.597 / AC 0.596 为唯一未达标题型；逐句核对答案与原文、删除无依据陈述，配合修正"文档写了原因仍判未说明"的执行问题。
+        <div class="action-file">src/core/postprocess/（P4 接地核验）</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">5</div>
+      <div class="action-body">
+        <div class="action-title">改写器俗称 / 专有名词翻译 <span class="pattern-tag tag-warn" style="margin-left:6px">P1</span></div>
+        off-road skiing、small horns、ketchup、Pylegi 等错误已证实会使检索分数降至 0.01 量级；短期加少量示例，长期 QLoRA 微调。
+        <div class="action-file">src/core/query_rewrite/query_rewriter.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">6</div>
+      <div class="action-body">
+        <div class="action-title">Round 4：反例 + 多轮对话 + 并发回放 <span class="pattern-tag tag-accent" style="margin-left:6px">计划</span></div>
+        三轮评估集全部为正例，拒答阈值只校准了"误拒"一侧；补充约 30 条无答案反例（统计正确拒答率与编造率）、约 20 组多轮对话；同一批题串行一遍出质量分、并发回放一遍出 P50 / P95 延迟与错误率。
+        <div class="action-file">data/evaluation/ · scripts/run_eval_baseline.py</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-num">7</div>
+      <div class="action-body">
+        <div class="action-title">评估嵌入模型独立化 <span class="pattern-tag tag-neutral" style="margin-left:6px">P2</span></div>
+        当前 AR / AC 相似度使用系统同款 nomic（偏英文），R3 后换多语言模型（bge-m3 或 text-embedding-v3）并统一重算 R1–R3 的 AR / AC。
+        <div class="action-file">scripts/run_ragas_offline.py</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnotes">
+    <span>Judge LLM: qwen-plus (Aliyun API) · 嵌入模型: nomic-embed-text ONNX（与 R1 / R2 一致） · AR 提示词: zh_v2（RAGAS 原生计分逻辑）</span>
+    <span>检索: Milvus 2.6 IVF_RABITQ + BM25（单句）→ 段落级 RRF → BGE-Reranker-v2-m3 TEI FP16 MaxP 重排 → 双阈值分档（τ_high 0.3 / τ_low 0.1）+ Qwen3-4B 充分性判定</span>
+    <span>显著性检验: Wilcoxon 符号秩检验（配对 177 条）· CP / CR 置信区间: bootstrap 5000 次 · Badcase 定义: F&lt;0.3 或 AC&lt;0.4</span>
+    <span>数据来源: ragas_results_batch_3.json（原题 179 条）· ragas_results_batch_51.json（合成 53 条）· trace_r3_syn60.log</span>
+    <span>生成时间: 2026-10-05 · Author: Ke Meng</span>
+  </div>
+
+</div>
+
+</body>
+</html>
