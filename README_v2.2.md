@@ -121,7 +121,7 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 | 10 | 翻译改变原文语义、专有名词写法不一 | 中文转述规范 + 专有名词保真 | AC |
 
 <details>
-<summary><b>1. Reasoning 类型问题幻觉</b></summary>
+<summary><b>1. Reasoning 类型问题幻觉 ⬅ （点击可查看详情）</b></summary>
 
 **规模：** 16 条 badcase，占 badcase 总量 43%；Round 2 reasoning 题 F 0.498。
 
@@ -319,7 +319,7 @@ Round 1 共 62 条 badcase（占 180 条的 34.4%，F=None 的 13 条已排除�
 > 优化 3 与优化 6 中的低分阈值已先后被 Round 2 优化 4（TEI 重排 + 0.45 门控）和优化 8（双阈值分档 + 4B 判定）取代。
 
 <details>
-<summary><b>1. BM25 检索粒度与向量不一致</b></summary>
+<summary><b>1. BM25 检索粒度与向量不一致 ⬅ （点击可查看详情）</b></summary>
 
 **根因：** 向量检索对单句 `cs_text` 做嵌入，BM25 却检索 `content`（多条 `cs_text` 拼接成的长文本），关键词可能命中拼接文本中的任意一句，匹配精度被稀释，BM25 路召回质量下降。
 
