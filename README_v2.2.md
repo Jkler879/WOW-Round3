@@ -122,7 +122,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>1. Reasoning 类型问题幻觉 ⬅ （点击可查看详情）</b></summary>
-
+-
+  
 **规模：** 16 条 badcase，占 badcase 总量 43%；Round 2 reasoning 题 F 0.498。
 
 **根因：** 模型已检索到正确文档（CR = 1.0），但 ReAct 推理链在生成答案前混入了参数记忆。原有 Rule 7 只约束输出层，拦不住推理过程中的参数记忆渗入（post-rationalization）。
@@ -145,7 +146,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>2. Simple / Multi-hop 类型问题幻觉</b></summary>
-
+-
+  
 **规模：** 8 条 badcase，F < 0.3。
 
 **根因：**
@@ -164,7 +166,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>3. 答案焦点偏移</b></summary>
-
+-
+  
 **规模：** 13 条 badcase，F ≥ 0.3（答案有文档支撑），AC < 0.4（方向偏离）。
 
 **根因：**
@@ -180,7 +183,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>4. 重排器引发回归</b></summary>
-
+-
+  
 **规模：** 相比 Round 1 新增 9 条 badcase（R1 good → R2 bad）。
 
 **根因：**
@@ -199,7 +203,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>5. AR 大量误判为 0</b></summary>
-
+-
+  
 **规模：** R2 中 21 条 AR 恰好为 0。
 
 **根因（R3 更正）：** AR 恰好为 0 的机制是评审模型 3 次反推均判定答案"含糊回避"。中文指令把"给出答案 + 说明某部分资料缺失"也判为回避，而系统提示词恰恰要求说明知识库未覆盖的部分，导致越诚实的答案越容易被打 0 分。最初认定的"跨语言相似度归零"并非主因。
@@ -210,7 +215,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>6. CP / CR 虚高</b></summary>
-
+-
+  
 **根因：**
 1. 评估集由 Claude Sonnet 5.5 读取知识库 Top 200 生成，问题用词天然来自 chunk 本身：BM25 精确命中 → CP 虚高；问题与 chunk 语义同源，向量高度相近 → CR 虚高。
 2. 真实用户问题存在词汇鸿沟：口语、同义词、俗称多，句子短，与原文关键词重叠低。例如"滑雪比赛穿过森林那种是怎么玩的？"不会出现 cross-country、groomed course 等词。
@@ -237,7 +243,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>7. F 提升的统计显著性检验</b></summary>
-
+-
+  
 **根因：** Round 1 → Round 2 的 F 提升（+0.12）仅凭均值对比，未区分系统改进与批次采样噪声。
 
 **检验方法：**
@@ -265,7 +272,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>8. 检索层重构（small-to-big）</b></summary>
-
+-
+  
 **根因：**
 1. 原 RRF 按单句计分，同一父段落的多个命中句各占一个候选名额，25 个名额实际只有十几个不同段落。
 2. 父段落由一段对话中多篇维基百科文章的句子拼接而成，对整段打分时相关句被稀释，gold 段落常被 0.45 阈值过滤，多数题只返回 1 块。
@@ -281,7 +289,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>9. 答案长度控制</b></summary>
-
+-
+  
 **根因：** Round 2 中，答案长度与 F、AC 分别负相关 −0.45 和 −0.41；答案中位长度 188 字，GT 仅 64 字；最短三分位的答案 F 0.759 / AC 0.684，已经过线。
 
 **优化方案（System Prompt）：**
@@ -293,7 +302,8 @@ Round 2 共 37 条 badcase，按根因归类后制定以下优化。
 
 <details>
 <summary><b>10. 翻译与专有名词保真</b></summary>
-
+-
+  
 **优化方案（System Prompt）：**
 1. 答案全部用中文转述，不引用英文原句。
 2. 专有名词统一写成"中文译名（英文原名）"，没有通用译名时保留文档原写法。
@@ -316,85 +326,6 @@ Round 1 共 62 条 badcase（占 180 条的 34.4%，F=None 的 13 条已排除�
 | 6 | Reasoning 题参数记忆覆盖检索、答案发散 | System Prompt 三项：只答所问、低分区禁用内置知识、删除"自信"措辞 | F / AR |
 | 7 | 查询改写扩大了问题范围 | 改写 Rule 6 "完整性" → "范围保真" | AR |
 
-> 优化 3 与优化 6 中的低分阈值已先后被 Round 2 优化 4（TEI 重排 + 0.45 门控）和优化 8（双阈值分档 + 4B 判定）取代。
-
-<details>
-<summary><b>1. BM25 检索粒度与向量不一致 ⬅ （点击可查看详情）</b></summary>
-
-**根因：** 向量检索对单句 `cs_text` 做嵌入，BM25 却检索 `content`（多条 `cs_text` 拼接成的长文本），关键词可能命中拼接文本中的任意一句，匹配精度被稀释，BM25 路召回质量下降。
-
-**优化方案：** 重建知识库，BM25 Function 单独索引 `cs_text` 字段，与向量嵌入粒度对齐；交给 LLM 的仍是完整 `content` 段落，遵循 Small-to-Big 策略：细粒度匹配、段落级生成。
-
-**位置：** `src/core/redis-stream/create_milvus_collection.py`
-
-</details>
-
-<details>
-<summary><b>2. 重复 chunk 进入重排</b></summary>
-
-**根因：** 同一段落的多个单句命中后携带相同的父段落内容进入重排，导致同一内容被多次计分并占用 topK 名额。
-
-**优化方案：** 在 RRF 融合之后、重排之前按内容去重，确保每条候选唯一（Round 3 进一步升级为段落级 RRF，见 Round 2 优化 8）。
-
-**位置：** `src/core/ReAct_Agent/tools/retriever.py`
-
-</details>
-
-<details>
-<summary><b>3. 重排保底阈值过松</b></summary>
-
-**根因：** 原逻辑只有当所有重排分数 < −5.0 时才返回空，阈值极松，几乎所有低质量文档都会进入上下文。
-
-**优化方案：** 阈值收紧为 −1.0；全部低于阈值时仍返回最高分 1 条，保证 LLM 始终有文档可参考，由 LLM 判断内容是否可用。
-
-**后续：** 已被 Round 2 优化 4 与 Round 3 优化 8 取代。
-
-</details>
-
-<details>
-<summary><b>4. 重排候选池偏小</b></summary>
-
-**优化方案：** RRF 融合后送入重排的候选从 10 条扩至 15 条，重排器在更大的候选池中筛选，最终输出 topK 不变（5 条），提升精排质量上限。
-
-**后续：** Round 2 进一步扩至 25（优化 4）。
-
-</details>
-
-<details>
-<summary><b>5. 知识库覆盖缺口</b></summary>
-
-**规模：** 6 个主题 CR = 0（Parenting / Pizza / Tomato / Field hockey / Unicorn / Dragon），知识库中不存在能回答相关问题的内容。
-
-**优化方案：** 针对这 6 个主题生成英文解释性内容，经 Redis Stream 增量写入 Milvus，补齐覆盖缺口。
-
-**位置：** `data/processed/chunks/wow_supplement_badcase6.json`
-
-</details>
-
-<details>
-<summary><b>6. Reasoning 题幻觉与答案发散</b></summary>
-
-**规模：** 42 条 badcase 属于"Reasoning 题参数记忆覆盖检索"（R1 reasoning F 仅 0.351）；32 条 AR &lt; 0.3 属于"答案方向偏离"。
-
-**根因：** 模型在推断中调用参数知识填补逻辑缺口；问题问 A，答案却覆盖 A + B + C。
-
-**优化方案（System Prompt）：**
-
-| 改动 | 内容 | 目标指标 |
-|------|------|---------|
-| 回复风格第 3 条（新增） | 只回答被问到的内容，补充信息须后置并标注，避免答案发散 | AR |
-| Rule 3 | 低分阈值 0.2 → 0.35，低分区明确禁止用内置知识填补 | F |
-| Rule 4 | 删除"自信"措辞，改为"直接引用文档内容，严格遵守接地约束" | F |
-
-</details>
-
-<details>
-<summary><b>7. 查询改写扩大问题范围</b></summary>
-
-**根因：** 改写 Rule 6 要求"确保生成的问题包含所有必要上下文"，导致改写后的问题范围宽于原问题，例如原问"导演是谁"被扩展出"拍摄背景""上映时间"，检索和回答随之发散。
-
-**优化方案：** Rule 6 改为"范围保真"：只填补指代消解所需的最小上下文，改写结果的覆盖范围不得宽于原始问题。
-
-**位置：** `src/core/query_rewrite/query_rewriter.py`
+> 优化 3 与优化 6 已被 Round 2 优化8：检索层重构（small-to-big）取代。
 
 </details>
