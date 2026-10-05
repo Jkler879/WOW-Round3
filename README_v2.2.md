@@ -85,8 +85,8 @@
 **生成模型：** Claude Sonnet 5.5 负责数据生成；Claude Opus 5.5 负责质量评估与优化
 
 **合成逻辑：**
-- **改写集：** 从 Round 2 结果中按 topic 抽取 30 个高 Faithfulness 题（F ≥ 0.7，15 simple + 15 reasoning），避开 chunk 关键词改写为口语化问法，GT 沿用原题，用于逐题配对比较。
-- **对抗集：** 从 Round 2 结果中（排除改写集）分层随机抽取 30 个 gold chunk（15 simple / 12 reasoning / 3 multi_hop，seed=42），按 **chunk → GT → 问题** 顺序生成：GT 只取自 gold chunk 原文并逐字校验依据句，问题采用以下四类问法：
+- **改写集：** 从评估集中按 topic 抽取 30 个高 Faithfulness 题（F ≥ 0.7，15 simple + 15 reasoning），避开 chunk 关键词改写为口语化问法，GT 沿用原题，用于逐题配对比较。
+- **对抗集：** 从评估集中（排除改写集）分层随机抽取 30 个 gold chunk（15 simple / 12 reasoning / 3 multi_hop，seed=42），按 **chunk → GT → 问题** 顺序生成：GT 只取自 gold chunk 原文并逐字校验依据句，问题采用以下四类问法：
 
 | 问法 | 数量 | 示例 |
 |------|------|------|
