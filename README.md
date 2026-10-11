@@ -1,4 +1,4 @@
-# WOW-Data Flywheel 数据飞轮 Agent（三轮）
+# WOW-Data Flywheel 数据飞轮 Agent
 
 面向 ReAct Agent 多轮对话系统的离线数据飞轮。
 
